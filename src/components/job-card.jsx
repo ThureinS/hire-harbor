@@ -83,11 +83,10 @@ const JobCard = ({
         <p>
           {job?.description
             ? job.description.includes(".")
-              ? job.description.slice(0, job.description.indexOf(".") + 1) // include the period
-              : job.description // no period → show the whole thing
+              ? job.description.slice(0, job.description.indexOf(".") + 1)
+              : job.description
             : ""}
         </p>
-        {/* {job.description.substring(0, job.description.indexOf("."))} */}
       </CardContent>
       <CardFooter className="flex gap-2">
         <Link to={`/job/${job.id}`} className="flex-1">

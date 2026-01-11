@@ -1,6 +1,5 @@
 import supabaseClient, { supabaseUrl } from "@/utils/supabase";
 
-// Fetch Companies
 export async function getCompanies(token) {
   const supabase = await supabaseClient(token);
   const { data, error } = await supabase.from("companies").select("*");
@@ -13,7 +12,6 @@ export async function getCompanies(token) {
   return data;
 }
 
-// Add Company
 export async function addNewCompany(token, _, companyData) {
   const supabase = await supabaseClient(token);
 

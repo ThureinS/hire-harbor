@@ -73,10 +73,8 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
           <DrawerTitle>Add a New Company</DrawerTitle>
         </DrawerHeader>
         <form className="flex gap-2 p-4 pb-0">
-          {/* Company Name */}
           <Input placeholder="Company name" {...register("name")} />
 
-          {/* Company Logo */}
           <Input
             type="file"
             accept="image/*"
@@ -84,7 +82,6 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
             {...register("logo")}
           />
 
-          {/* Add Button */}
           <Button
             type="button"
             onClick={handleSubmit(onSubmit)}
