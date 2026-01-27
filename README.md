@@ -31,7 +31,7 @@ Check out the live application: [https://hire-harbor-roan.vercel.app/](https://h
 
 ### General Features
 
-- **User Authentication**: Secure authentication powered by Clerk
+- **User Authentication**: Secure login and signup via Clerk
 - **Role-based Access**: Different interfaces for recruiters and candidates
 - **Onboarding Flow**: Guided setup for new users
 - **Responsive Design**: Optimized for desktop and mobile devices
@@ -50,7 +50,7 @@ Check out the live application: [https://hire-harbor-roan.vercel.app/](https://h
 
 ### Backend & Services
 
-- **Supabase** - Database, authentication, and file storage
+- **Supabase** - PostgreSQL database and file storage
 - **Clerk** - User authentication and management
 
 ### Key Libraries
