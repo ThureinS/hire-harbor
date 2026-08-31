@@ -63,7 +63,7 @@ const PostJob = () => {
 
   useEffect(() => {
     if (dataCreateJob?.length > 0) navigate("/jobs");
-  }, [loadingCreateJob]);
+  }, [dataCreateJob, navigate]);
 
   const {
     loading: loadingCompanies,
@@ -75,8 +75,7 @@ const PostJob = () => {
     if (isLoaded) {
       fnCompanies();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded]);
+  }, [isLoaded, fnCompanies]);
 
   if (!isLoaded || loadingCompanies) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
@@ -88,7 +87,7 @@ const PostJob = () => {
 
   return (
     <div>
-      <h1 className="gradient-title font-extrabold text-5xl sm:text-7xl text-center pb-8">
+      <h1 className="page-title pb-8 text-center text-5xl font-extrabold sm:text-7xl">
         Post a Job
       </h1>
       <form
@@ -175,7 +174,7 @@ const PostJob = () => {
           <p className="text-red-500">{errorCreateJob?.message}</p>
         )}
         {loadingCreateJob && <BarLoader width={"100%"} color="#36d7b7" />}
-        <Button type="submit" variant="blue" size="lg" className="mt-2">
+        <Button type="submit" size="lg" className="mt-2">
           Submit
         </Button>
       </form>

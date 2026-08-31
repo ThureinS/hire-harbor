@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import {
   Drawer,
   DrawerClose,
@@ -59,7 +58,7 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
     if (dataAddCompany?.length > 0) {
       fetchCompanies();
     }
-  }, [loadingAddCompany]);
+  }, [dataAddCompany, fetchCompanies]);
 
   return (
     <Drawer>

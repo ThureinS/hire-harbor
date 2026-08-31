@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -76,7 +75,8 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
       <DrawerTrigger asChild>
         <Button
           size="lg"
-          variant={job?.isOpen && !applied ? "blue" : "destructive"}
+          variant={job?.isOpen && !applied ? "default" : "destructive"}
+          className="w-full font-black"
           disabled={!job?.isOpen || applied}
         >
           {job?.isOpen ? (applied ? "Applied" : "Apply") : "Hiring Closed"}
@@ -150,7 +150,7 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
             <p className="text-red-500">{errorApply?.message}</p>
           )}
           {loadingApply && <BarLoader width={"100%"} color="#36d7b7" />}
-          <Button type="submit" variant="blue" size="lg">
+          <Button type="submit" size="lg">
             Apply
           </Button>
         </form>

@@ -1,5 +1,5 @@
 import { useSession } from "@clerk/clerk-react";
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 
 const useFetch = (cb, options = {}) => {
   const [data, setData] = useState(undefined);
@@ -7,8 +7,13 @@ const useFetch = (cb, options = {}) => {
   const [error, setError] = useState(null);
 
   const { session } = useSession();
+  const cbRef = useRef(cb);
+  const optionsRef = useRef(options);
 
-  const fn = async (...args) => {
+  cbRef.current = cb;
+  optionsRef.current = options;
+
+  const fn = useCallback(async (...args) => {
     setLoading(true);
     setError(null);
 
@@ -16,7 +21,11 @@ const useFetch = (cb, options = {}) => {
       const supabaseAccessToken = await session.getToken({
         template: "supabase",
       });
-      const response = await cb(supabaseAccessToken, options, ...args);
+      const response = await cbRef.current(
+        supabaseAccessToken,
+        optionsRef.current,
+        ...args
+      );
       setData(response);
       setError(null);
     } catch (error) {
@@ -24,7 +33,7 @@ const useFetch = (cb, options = {}) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session]);
 
   return { data, loading, error, fn };
 };

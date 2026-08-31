@@ -8,17 +8,15 @@ import {
   useUser,
 } from "@clerk/clerk-react";
 import { Button } from "./ui/button";
-import { BriefcaseBusiness, Heart, PenBox } from "lucide-react";
+import { BriefcaseBusiness, Heart, LogIn, PenBox } from "lucide-react";
 
-import {
-  NavigationMenu,
-  NavigationMenuList,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuTrigger,
-  NavigationMenuContent,
-  navigationMenuTriggerStyle,
-} from "@/components/ui/navigation-menu";
+const navLinkClass = ({ isActive }) =>
+  [
+    "rounded-md px-3 py-2 text-sm font-semibold transition-colors",
+    isActive
+      ? "bg-primary/10 text-primary"
+      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+  ].join(" ");
 
 const Header = () => {
   const [showSignIn, setShowSignIn] = useState(false);
@@ -38,63 +36,45 @@ const Header = () => {
 
   return (
     <>
-      <nav className="py-4 flex items-center gap-6">
-        <div>
-          <NavigationMenu>
-            <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="flex justify-center items-center">
-                  <img
-                    src="/logo.png"
-                    className="h-20"
-                    alt="Hire Harbor Logo"
-                  />
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid gap-1 p-1 w-[150px]">
-                    <li>
-                      <Link
-                        to="/"
-                        className="block rounded-md p-3 hover:bg-muted"
-                      >
-                        <div className="font-medium">Home</div>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        to="/jobs"
-                        className="block rounded-md p-3 hover:bg-muted"
-                      >
-                        <div className="font-medium">Find Jobs</div>
-                      </Link>
-                    </li>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
+      <nav className="sticky top-0 z-40 flex items-center gap-4 border-b border-border bg-background/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:px-0">
+        <Link to="/" className="flex items-center gap-3">
+          <img src="/logo.png" className="h-12 w-auto" alt="Hire Harbor" />
+        </Link>
+
+        <div className="hidden items-center gap-1 md:flex">
+          <NavLink to="/" className={navLinkClass}>
+            Home
+          </NavLink>
+          <NavLink to="/jobs" className={navLinkClass}>
+            Find Jobs
+          </NavLink>
         </div>
 
-        <div className="flex-1 flex justify-end gap-3">
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
           <SignedOut>
-            <Button variant="outline" onClick={() => setShowSignIn(true)}>
+            <Button
+              variant="outline"
+              className="border-border bg-card/70 font-semibold hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent"
+              onClick={() => setShowSignIn(true)}
+            >
+              <LogIn size={18} className="mr-2" />
               Login
             </Button>
           </SignedOut>
 
           <SignedIn>
             {user?.unsafeMetadata?.role === "recruiter" && (
-              <Link to="/post-job">
-                <Button variant="destructive" className="rounded-full">
-                  <PenBox size={20} className="mr-2" />
+              <Button asChild className="font-bold shadow-[0_10px_30px_-18px_var(--primary)]">
+                <Link to="/post-job">
+                  <PenBox size={18} className="mr-2" />
                   Post a Job
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             )}
 
             <UserButton
               appearance={{
-                elements: { avatarBox: "w-10 h-10" },
+                elements: { avatarBox: "h-10 w-10 rounded-md" },
               }}
             >
               <UserButton.MenuItems>
@@ -117,7 +97,7 @@ const Header = () => {
 
       {showSignIn && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
           onClick={handleOverlayClick}
         >
           <SignIn

@@ -12,7 +12,7 @@ const MyJobs = () => {
 
   return (
     <div>
-      <h1 className="gradient-title font-extrabold text-5xl sm:text-7xl text-center pb-8">
+      <h1 className="page-title pb-8 text-center text-5xl font-extrabold sm:text-7xl">
         {user?.unsafeMetadata?.role === "candidate"
           ? "My Applications"
           : "My Jobs"}

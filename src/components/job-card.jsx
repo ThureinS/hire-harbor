@@ -1,5 +1,11 @@
-/* eslint-disable react/prop-types */
-import { Heart, MapPinIcon, Trash2Icon } from "lucide-react";
+import {
+  ArrowRight,
+  Building2,
+  Heart,
+  MapPinIcon,
+  Trash2Icon,
+  Users,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import {
   Card,
@@ -54,55 +60,94 @@ const JobCard = ({
     if (savedJob !== undefined) setSaved(savedJob?.length > 0);
   }, [savedJob]);
 
+  const summary = job?.description
+    ? job.description.includes(".")
+      ? job.description.slice(0, job.description.indexOf(".") + 1)
+      : job.description
+    : "No description has been added for this role yet.";
+
   return (
-    <Card className="flex flex-col">
+    <Card className="group flex h-full flex-col rounded-md border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
       {loadingDeleteJob && (
-        <BarLoader className="mt-4" width={"100%"} color="#36d7b7" />
+        <BarLoader className="mt-4" width={"100%"} color="var(--primary)" />
       )}
-      <CardHeader className="flex">
-        <CardTitle className="flex justify-between font-bold">
-          {job.title}
+      <CardHeader className="gap-4 border-b border-border pb-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-border bg-background">
+              {job.company?.logo_url ? (
+                <img
+                  src={job.company.logo_url}
+                  className="max-h-7 max-w-8 object-contain"
+                  alt={job.company?.name || "Company logo"}
+                />
+              ) : (
+                <Building2 size={20} className="text-muted-foreground" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-muted-foreground">
+                {job.company?.name || "Company"}
+              </p>
+              <CardTitle className="mt-1 line-clamp-2 text-xl font-black leading-tight">
+                {job.title}
+              </CardTitle>
+            </div>
+          </div>
           {isMyJob && (
-            <Trash2Icon
-              fill="red"
-              size={18}
-              className="text-red-300 cursor-pointer"
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={handleDeleteJob}
-            />
+              aria-label={`Delete ${job.title}`}
+            >
+              <Trash2Icon size={18} />
+            </Button>
           )}
-        </CardTitle>
+        </div>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4 flex-1">
-        <div className="flex justify-between">
-          {job.company && <img src={job.company.logo_url} className="h-6" />}
-          <div className="flex gap-2 items-center">
-            <MapPinIcon size={15} /> {job.location}
+
+      <CardContent className="flex flex-1 flex-col gap-5 p-5">
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="rounded-md border border-border bg-background p-3">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase text-muted-foreground">
+              <MapPinIcon size={14} />
+              Location
+            </p>
+            <p className="mt-1 truncate font-bold">{job.location}</p>
+          </div>
+          <div className="rounded-md border border-border bg-background p-3">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase text-muted-foreground">
+              <Users size={14} />
+              Applicants
+            </p>
+            <p className="mt-1 font-bold">{job.applications?.length ?? 0}</p>
           </div>
         </div>
-        <hr />
-        <p>
-          {job?.description
-            ? job.description.includes(".")
-              ? job.description.slice(0, job.description.indexOf(".") + 1)
-              : job.description
-            : ""}
+        <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">
+          {summary}
         </p>
       </CardContent>
-      <CardFooter className="flex gap-2">
-        <Link to={`/job/${job.id}`} className="flex-1">
-          <Button variant="secondary" className="w-full">
-            More Details
-          </Button>
-        </Link>
+
+      <CardFooter className="gap-2 p-5 pt-0">
+        <Button asChild className="flex-1 font-bold">
+          <Link to={`/job/${job.id}`}>
+            Details
+            <ArrowRight size={17} className="ml-2" />
+          </Link>
+        </Button>
         {!isMyJob && (
           <Button
             variant="outline"
-            className="w-15"
+            size="icon"
+            className="border-border bg-card hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
             onClick={handleSaveJob}
             disabled={loadingSavedJob}
+            aria-label={saved ? "Remove saved job" : "Save job"}
           >
             {saved ? (
-              <Heart size={20} fill="red" stroke="red" />
+              <Heart size={20} fill="var(--primary)" stroke="var(--primary)" />
             ) : (
               <Heart size={20} />
             )}

@@ -18,8 +18,7 @@ const SavedJobs = () => {
     if (isLoaded) {
       fnSavedJobs();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoaded]);
+  }, [isLoaded, fnSavedJobs]);
 
   if (!isLoaded || loadingSavedJobs) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
@@ -27,7 +26,7 @@ const SavedJobs = () => {
 
   return (
     <div>
-      <h1 className="gradient-title font-extrabold text-6xl sm:text-7xl text-center pb-8">
+      <h1 className="page-title pb-8 text-center text-6xl font-extrabold sm:text-7xl">
         Saved Jobs
       </h1>
 

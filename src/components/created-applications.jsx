@@ -18,8 +18,7 @@ const CreatedApplications = () => {
 
   useEffect(() => {
     fnApplications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fnApplications]);
 
   if (loadingApplications) {
     return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;

@@ -3,13 +3,12 @@ import { Outlet } from "react-router-dom";
 
 const AppLayout = () => {
   return (
-    <div>
-      <div className="grid-background"></div>
+    <div className="min-h-screen bg-background text-foreground">
       <main className="min-h-screen container mx-auto">
         <Header />
         <Outlet />
       </main>
-      <div className="p-5 text-center bg-gray-800 mt-10">
+      <div className="mt-10 border-t border-border bg-card p-5 text-center text-sm text-muted-foreground">
         Made with 💗 by Thurein Soe
       </div>
     </div>
