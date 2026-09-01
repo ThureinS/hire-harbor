@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   DoorClosed,
   DoorOpen,
+  Inbox,
   MapPinIcon,
   Users,
 } from "lucide-react";
@@ -56,6 +57,20 @@ const JobPage = () => {
 
   if (!isLoaded || loadingJob) {
     return <BarLoader className="mb-4" width={"100%"} color="var(--primary)" />;
+  }
+
+  if (!job) {
+    return (
+      <div className="px-4 py-6 sm:px-0">
+        <section className="rounded-md border border-border bg-card p-8 text-center">
+          <Briefcase className="mx-auto h-10 w-10 text-primary" />
+          <h1 className="mt-4 text-2xl font-black">Job not found</h1>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+            This role may have been removed or is no longer available.
+          </p>
+        </section>
+      </div>
+    );
   }
 
   return (
@@ -127,7 +142,11 @@ const JobPage = () => {
       </section>
 
       {job?.recruiter_id === user?.id && (
-        <Select onValueChange={handleStatusChange}>
+        <Select
+          onValueChange={handleStatusChange}
+          defaultValue={job?.isOpen ? "open" : "closed"}
+          disabled={loadingHiringStatus}
+        >
           <SelectTrigger
             className={`h-12 w-full border-border font-bold ${
               job?.isOpen ? "bg-primary/10 text-primary" : "bg-destructive/10 text-destructive"
@@ -193,16 +212,39 @@ const JobPage = () => {
         />
       </section>
 
-      {loadingHiringStatus && <BarLoader width={"100%"} color="var(--primary)" />}
-      {job?.applications?.length > 0 && job?.recruiter_id === user?.id && (
-        <div className="flex flex-col gap-3 rounded-md border border-border bg-card p-5">
-          <h2 className="text-xl font-black">Applications</h2>
-          {job?.applications.map((application) => {
-            return (
+      {loadingHiringStatus && (
+        <BarLoader width={"100%"} color="var(--primary)" />
+      )}
+      {job?.recruiter_id === user?.id && (
+        <section className="flex flex-col gap-3 rounded-md border border-border bg-card p-5 sm:p-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
+                Recruiter view
+              </p>
+              <h2 className="mt-1 text-2xl font-black sm:text-3xl">
+                Applications
+              </h2>
+            </div>
+            <span className="rounded-md border border-border bg-background px-3 py-2 text-sm font-black">
+              {job?.applications?.length ?? 0} total
+            </span>
+          </div>
+
+          {job?.applications?.length ? (
+            job.applications.map((application) => (
               <ApplicationCard key={application.id} application={application} />
-            );
-          })}
-        </div>
+            ))
+          ) : (
+            <div className="rounded-md border border-border bg-background p-8 text-center">
+              <Inbox className="mx-auto h-9 w-9 text-primary" />
+              <p className="mt-4 text-lg font-black">No applications yet</p>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                Candidate submissions for this role will appear here for review.
+              </p>
+            </div>
+          )}
+        </section>
       )}
     </div>
   );

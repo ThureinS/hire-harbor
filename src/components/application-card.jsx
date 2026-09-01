@@ -23,6 +23,13 @@ import { updateApplicationStatus } from "@/api/apiApplication";
 import useFetch from "@/hooks/use-fetch";
 import { BarLoader } from "react-spinners";
 
+const statusStyles = {
+  applied: "border-primary/30 bg-primary/10 text-primary",
+  interviewing: "border-sky-400/30 bg-sky-400/10 text-sky-300",
+  hired: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
+  rejected: "border-destructive/30 bg-destructive/10 text-destructive",
+};
+
 const ApplicationCard = ({ application, isCandidate = false }) => {
   const handleDownload = () => {
     const link = document.createElement("a");
@@ -45,6 +52,9 @@ const ApplicationCard = ({ application, isCandidate = false }) => {
   const submittedAt = application?.created_at
     ? new Date(application.created_at).toLocaleString()
     : "Submitted date unavailable";
+  const statusClass =
+    statusStyles[application?.status] ??
+    "border-border bg-background text-muted-foreground";
 
   return (
     <Card className="group transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg">
@@ -108,13 +118,16 @@ const ApplicationCard = ({ application, isCandidate = false }) => {
           {submittedAt}
         </span>
         {isCandidate ? (
-          <span className="rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-sm font-black capitalize text-primary">
+          <span
+            className={`rounded-md border px-3 py-2 text-sm font-black capitalize ${statusClass}`}
+          >
             Status: {application.status}
           </span>
         ) : (
           <Select
             onValueChange={handleStatusChange}
             defaultValue={application.status}
+            disabled={loadingHiringStatus}
           >
             <SelectTrigger className="h-11 w-full border-border bg-background font-bold sm:w-52">
               <SelectValue placeholder="Application Status" />
