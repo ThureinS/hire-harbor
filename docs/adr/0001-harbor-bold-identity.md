@@ -28,3 +28,4 @@ A UI overhaul was brainstormed against six candidate themes (A Harbor Bold light
 - Fraunces (and any webfont) stays out of `index.html`.
 - The style lab was deleted after the core overhaul shipped.
 - Legacy identity remnants (`.gradient-title` gray gradient, `blue` button variant, `grid-background`) have been removed as part of the overhaul.
+- Workflow forms and application status panels now follow the same Harbor Bold rules: labeled sans-serif controls, signal-orange action emphasis, sharp 6px surfaces, and guarded loading/disabled states.
