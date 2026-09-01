@@ -23,9 +23,9 @@ const CreatedJobs = () => {
   return (
     <div>
       {loadingCreatedJobs ? (
-        <BarLoader className="mt-4" width={"100%"} color="#36d7b7" />
+        <BarLoader className="mt-4" width={"100%"} color="var(--primary)" />
       ) : (
-        <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {createdJobs?.length ? (
             createdJobs.map((job) => {
               return (
@@ -38,7 +38,13 @@ const CreatedJobs = () => {
               );
             })
           ) : (
-            <div>No Jobs Found 😢</div>
+            <div className="rounded-md border border-border bg-card p-8 text-center md:col-span-2 lg:col-span-3">
+              <p className="text-lg font-black">No jobs posted yet</p>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                Create your first listing from the recruiter console to start
+                collecting applications.
+              </p>
+            </div>
           )}
         </div>
       )}

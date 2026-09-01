@@ -83,51 +83,61 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
         </Button>
       </DrawerTrigger>
       <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>
+        <DrawerHeader className="px-5 sm:px-6">
+          <DrawerTitle className="text-2xl font-black">
             Apply for {job?.title} at {job?.company?.name}
           </DrawerTitle>
-          <DrawerDescription>Please Fill the form below</DrawerDescription>
+          <DrawerDescription>
+            Submit your experience, skills, education, and resume.
+          </DrawerDescription>
         </DrawerHeader>
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 p-4 pb-0"
+          className="grid gap-4 px-5 pb-0 sm:px-6"
         >
           <Input
             type="number"
             placeholder="Years of Experience"
-            className="flex-1"
+            className="h-12 border-border bg-background"
             {...register("experience", {
               valueAsNumber: true,
             })}
           />
           {errors.experience && (
-            <p className="text-red-500">{errors.experience.message}</p>
+            <p className="text-sm font-semibold text-destructive">
+              {errors.experience.message}
+            </p>
           )}
           <Input
             type="text"
             placeholder="Skills (Comma Separated)"
-            className="flex-1"
+            className="h-12 border-border bg-background"
             {...register("skills")}
           />
           {errors.skills && (
-            <p className="text-red-500">{errors.skills.message}</p>
+            <p className="text-sm font-semibold text-destructive">
+              {errors.skills.message}
+            </p>
           )}
           <Controller
             name="education"
             control={control}
             render={({ field }) => (
-              <RadioGroup onValueChange={field.onChange} {...field}>
-                <div className="flex items-center space-x-2">
+              <RadioGroup
+                onValueChange={field.onChange}
+                className="grid gap-2 rounded-md border border-border bg-background p-4 sm:grid-cols-3"
+                {...field}
+              >
+                <div className="flex items-center gap-2">
                   <RadioGroupItem value="Intermediate" id="intermediate" />
                   <Label htmlFor="intermediate">Intermediate</Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <RadioGroupItem value="Graduate" id="graduate" />
                   <Label htmlFor="graduate">Graduate</Label>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <RadioGroupItem value="Post Graduate" id="post-graduate" />
                   <Label htmlFor="post-graduate">Post Graduate</Label>
                 </div>
@@ -135,27 +145,33 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
             )}
           />
           {errors.education && (
-            <p className="text-red-500">{errors.education.message}</p>
+            <p className="text-sm font-semibold text-destructive">
+              {errors.education.message}
+            </p>
           )}
           <Input
             type="file"
             accept=".pdf, .doc, .docx"
-            className="flex-1 file:text-gray-500"
+            className="h-12 border-border bg-background file:text-muted-foreground"
             {...register("resume")}
           />
           {errors.resume && (
-            <p className="text-red-500">{errors.resume.message}</p>
+            <p className="text-sm font-semibold text-destructive">
+              {errors.resume.message}
+            </p>
           )}
           {errorApply?.message && (
-            <p className="text-red-500">{errorApply?.message}</p>
+            <p className="text-sm font-semibold text-destructive">
+              {errorApply?.message}
+            </p>
           )}
-          {loadingApply && <BarLoader width={"100%"} color="#36d7b7" />}
-          <Button type="submit" size="lg">
+          {loadingApply && <BarLoader width={"100%"} color="var(--primary)" />}
+          <Button type="submit" size="lg" className="font-black">
             Apply
           </Button>
         </form>
 
-        <DrawerFooter>
+        <DrawerFooter className="px-5 sm:px-6">
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
           </DrawerClose>

@@ -2,6 +2,7 @@ import {
   Drawer,
   DrawerClose,
   DrawerContent,
+  DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
@@ -62,41 +63,68 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
 
   return (
     <Drawer>
-      <DrawerTrigger>
-        <Button type="button" size="sm" variant="secondary">
+      <DrawerTrigger asChild>
+        <Button
+          type="button"
+          size="lg"
+          variant="secondary"
+          className="h-12 whitespace-nowrap font-black"
+        >
           Add Company
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>Add a New Company</DrawerTitle>
+      <DrawerContent className="mx-auto max-w-3xl">
+        <DrawerHeader className="px-5 sm:px-6">
+          <DrawerTitle className="text-2xl font-black">
+            Add a new company
+          </DrawerTitle>
+          <DrawerDescription>
+            Add the company name and logo candidates will see on job listings.
+          </DrawerDescription>
         </DrawerHeader>
-        <form className="flex gap-2 p-4 pb-0">
-          <Input placeholder="Company name" {...register("name")} />
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="grid gap-4 px-5 pb-0 sm:grid-cols-[1fr_1fr_auto] sm:px-6"
+        >
+          <Input
+            placeholder="Company name"
+            className="h-12 border-border bg-background"
+            {...register("name")}
+          />
 
           <Input
             type="file"
             accept="image/*"
-            className=" file:text-gray-500"
+            className="h-12 border-border bg-background file:text-muted-foreground"
             {...register("logo")}
           />
 
           <Button
-            type="button"
-            onClick={handleSubmit(onSubmit)}
-            variant="destructive"
-            className="w-40"
+            type="submit"
+            className="h-12 whitespace-nowrap font-black"
           >
             Add
           </Button>
         </form>
-        <DrawerFooter>
-          {errors.name && <p className="text-red-500">{errors.name.message}</p>}
-          {errors.logo && <p className="text-red-500">{errors.logo.message}</p>}
-          {errorAddCompany?.message && (
-            <p className="text-red-500">{errorAddCompany?.message}</p>
+        <DrawerFooter className="px-5 sm:px-6">
+          {errors.name && (
+            <p className="text-sm font-semibold text-destructive">
+              {errors.name.message}
+            </p>
           )}
-          {loadingAddCompany && <BarLoader width={"100%"} color="#36d7b7" />}
+          {errors.logo && (
+            <p className="text-sm font-semibold text-destructive">
+              {errors.logo.message}
+            </p>
+          )}
+          {errorAddCompany?.message && (
+            <p className="text-sm font-semibold text-destructive">
+              {errorAddCompany?.message}
+            </p>
+          )}
+          {loadingAddCompany && (
+            <BarLoader width={"100%"} color="var(--primary)" />
+          )}
           <DrawerClose asChild>
             <Button type="button" variant="secondary">
               Cancel

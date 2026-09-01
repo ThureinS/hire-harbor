@@ -21,20 +21,32 @@ const CreatedApplications = () => {
   }, [fnApplications]);
 
   if (loadingApplications) {
-    return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
+    return (
+      <BarLoader className="mb-4" width={"100%"} color="var(--primary)" />
+    );
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      {applications?.map((application) => {
-        return (
-          <ApplicationCard
-            key={application.id}
-            application={application}
-            isCandidate={true}
-          />
-        );
-      })}
+    <div className="flex flex-col gap-4">
+      {applications?.length ? (
+        applications.map((application) => {
+          return (
+            <ApplicationCard
+              key={application.id}
+              application={application}
+              isCandidate={true}
+            />
+          );
+        })
+      ) : (
+        <div className="rounded-md border border-border bg-card p-8 text-center">
+          <p className="text-lg font-black">No applications submitted yet</p>
+          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+            Apply to a listing from the jobs board and your status will appear
+            here.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

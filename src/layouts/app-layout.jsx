@@ -9,7 +9,7 @@ const AppLayout = () => {
         <Outlet />
       </main>
       <div className="mt-10 border-t border-border bg-card p-5 text-center text-sm text-muted-foreground">
-        Made with 💗 by Thurein Soe
+        Built by Thurein Soe
       </div>
     </div>
   );
