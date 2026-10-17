@@ -1,4 +1,10 @@
-import supabaseClient from "@/utils/supabase";
+import supabaseClient, { assertRowsAffected } from "@/utils/supabase";
+
+// Escape Postgres LIKE wildcards so a literal `%`/`_` in a search term
+// doesn't match more broadly than the user typed.
+function escapeLikePattern(value) {
+  return value.replace(/[%_\\]/g, "\\$&");
+}
 
 // Fetch Jobs
 export async function getJobs(token, { location, company_id, searchQuery }) {
@@ -16,29 +22,28 @@ export async function getJobs(token, { location, company_id, searchQuery }) {
   }
 
   if (searchQuery) {
-    query = query.ilike("title", `%${searchQuery}%`);
+    query = query.ilike("title", `%${escapeLikePattern(searchQuery)}%`);
   }
 
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching Jobs:", error);
-    return null;
+    throw error;
   }
 
   return data;
 }
 
 // Read Saved Jobs
-export async function getSavedJobs(token) {
+export async function getSavedJobs(token, { user_id }) {
   const supabase = await supabaseClient(token);
   const { data, error } = await supabase
     .from("saved_jobs")
-    .select("*, job: jobs(*, company: companies(name,logo_url))");
+    .select("*, job: jobs(*, company: companies(name,logo_url))")
+    .eq("user_id", user_id);
 
   if (error) {
-    console.error("Error fetching Saved Jobs:", error);
-    return null;
+    throw error;
   }
 
   return data;
@@ -53,13 +58,12 @@ export async function getSingleJob(token, { job_id }) {
       "*, company: companies(name,logo_url), applications: applications(*)"
     )
     .eq("id", job_id)
-    .single();
+    .maybeSingle();
 
   const { data, error } = await query;
 
   if (error) {
-    console.error("Error fetching Job:", error);
-    return null;
+    throw error;
   }
 
   return data;
@@ -74,13 +78,15 @@ export async function saveJob(token, { alreadySaved }, saveData) {
     const { data, error: deleteError } = await supabase
       .from("saved_jobs")
       .delete()
-      .eq("job_id", saveData.job_id);
+      .eq("job_id", saveData.job_id)
+      .eq("user_id", saveData.user_id)
+      .select();
 
     if (deleteError) {
-      console.error("Error removing saved job:", deleteError);
-      return data;
+      throw deleteError;
     }
 
+    assertRowsAffected(data, "Job was not unsaved. Check your access and try again.");
     return data;
   } else {
     // If the job is not saved, add it to saved jobs
@@ -90,15 +96,15 @@ export async function saveJob(token, { alreadySaved }, saveData) {
       .select();
 
     if (insertError) {
-      console.error("Error saving job:", insertError);
-      return data;
+      throw insertError;
     }
 
+    assertRowsAffected(data, "Job was not saved. Check your access and try again.");
     return data;
   }
 }
 
-// - job isOpen toggle - (recruiter_id = auth.uid())
+// Toggle hiring status; database policies must enforce recruiter ownership.
 export async function updateHiringStatus(token, { job_id }, isOpen) {
   const supabase = await supabaseClient(token);
   const { data, error } = await supabase
@@ -108,10 +114,10 @@ export async function updateHiringStatus(token, { job_id }, isOpen) {
     .select();
 
   if (error) {
-    console.error("Error Updating Hiring Status:", error);
-    return null;
+    throw error;
   }
 
+  assertRowsAffected(data, "Hiring status was not updated. Check your access and try again.");
   return data;
 }
 
@@ -125,8 +131,7 @@ export async function getMyJobs(token, { recruiter_id }) {
     .eq("recruiter_id", recruiter_id);
 
   if (error) {
-    console.error("Error fetching Jobs:", error);
-    return null;
+    throw error;
   }
 
   return data;
@@ -143,10 +148,10 @@ export async function deleteJob(token, { job_id }) {
     .select();
 
   if (deleteError) {
-    console.error("Error deleting job:", deleteError);
-    return data;
+    throw deleteError;
   }
 
+  assertRowsAffected(data, "Job was not deleted. Check your access and try again.");
   return data;
 }
 
@@ -160,9 +165,9 @@ export async function addNewJob(token, _, jobData) {
     .select();
 
   if (error) {
-    console.error(error);
-    throw new Error("Error Creating Job");
+    throw error;
   }
 
+  assertRowsAffected(data, "Job was not created. Check your access and try again.");
   return data;
 }

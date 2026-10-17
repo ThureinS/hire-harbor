@@ -3,6 +3,7 @@ import useFetch from "@/hooks/use-fetch";
 import { useUser } from "@clerk/clerk-react";
 import { BarLoader } from "react-spinners";
 import JobCard from "./job-card";
+import LoadError from "./load-error";
 import { useEffect } from "react";
 
 const CreatedJobs = () => {
@@ -11,18 +12,22 @@ const CreatedJobs = () => {
   const {
     loading: loadingCreatedJobs,
     data: createdJobs,
+    error: loadError,
+    ready,
     fn: fnCreatedJobs,
   } = useFetch(getMyJobs, {
-    recruiter_id: user.id,
+    recruiter_id: user?.id,
   });
 
   useEffect(() => {
-    fnCreatedJobs();
-  }, [fnCreatedJobs]);
+    if (ready && user?.id) fnCreatedJobs();
+  }, [ready, user?.id, fnCreatedJobs]);
+
+  if (loadError) return <LoadError />;
 
   return (
     <div>
-      {loadingCreatedJobs ? (
+      {!ready || loadingCreatedJobs ? (
         <BarLoader className="mt-4" width={"100%"} color="var(--primary)" />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

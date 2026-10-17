@@ -5,6 +5,7 @@ import { BarLoader } from "react-spinners";
 import useFetch from "@/hooks/use-fetch";
 
 import JobCard from "@/components/job-card";
+import LoadError from "@/components/load-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,11 +42,17 @@ const JobListing = () => {
 
   const { isLoaded } = useUser();
 
-  const { data: companies, fn: fnCompanies } = useFetch(getCompanies);
+  const {
+    data: companies,
+    error: companiesError,
+    ready,
+    fn: fnCompanies,
+  } = useFetch(getCompanies);
 
   const {
     loading: loadingJobs,
     data: jobs,
+    error: loadError,
     fn: fnJobs,
   } = useFetch(getJobs, {
     location,
@@ -57,12 +64,12 @@ const JobListing = () => {
   });
 
   useEffect(() => {
-    if (isLoaded) fnCompanies();
-  }, [isLoaded, fnCompanies]);
+    if (isLoaded && ready) fnCompanies();
+  }, [isLoaded, ready, fnCompanies]);
 
   useEffect(() => {
-    if (isLoaded) fnJobs();
-  }, [isLoaded, location, company_id, searchQuery, fnJobs]);
+    if (isLoaded && ready) fnJobs();
+  }, [isLoaded, ready, location, company_id, searchQuery, fnJobs]);
 
   useEffect(() => {
     setPage(1);
@@ -122,7 +129,7 @@ const JobListing = () => {
   const showingFrom = totalCount === 0 ? 0 : startIndex + 1;
   const showingTo = endIndex;
 
-  if (!isLoaded) {
+  if (!isLoaded || !ready) {
     return <BarLoader className="mb-4" width={"100%"} color="var(--primary)" />;
   }
 
@@ -193,7 +200,6 @@ const JobListing = () => {
             </SelectGroup>
           </SelectContent>
         </Select>
-
         <Button
           className="h-11 border-border bg-card font-bold"
           variant="outline"
@@ -202,13 +208,21 @@ const JobListing = () => {
           <X size={17} className="mr-2" />
           Clear
         </Button>
+
+        {companiesError && (
+          <p role="alert" className="text-sm text-destructive sm:col-span-3">
+            Could not load companies for this filter. Please refresh and try again.
+          </p>
+        )}
       </div>
 
       {loadingJobs && (
         <BarLoader className="mt-1" width={"100%"} color="var(--primary)" />
       )}
 
-      {loadingJobs === false && (
+      {loadError && <LoadError />}
+
+      {loadingJobs === false && !loadError && (
         <>
           <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">

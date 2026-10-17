@@ -12,4 +12,10 @@ const supabaseClient = async (supabaseAccessToken) => {
   return supabase;
 };
 
+// Require a returned row before the UI reports success. An empty result does
+// not establish whether a write occurred or whether RLS is correctly configured.
+export function assertRowsAffected(data, message) {
+  if (!data?.length) throw new Error(message);
+}
+
 export default supabaseClient;

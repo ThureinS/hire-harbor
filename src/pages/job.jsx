@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { BarLoader } from "react-spinners";
-import MDEditor from "@uiw/react-md-editor";
+import { SafeMarkdown } from "@/components/safe-markdown";
 import { useParams } from "react-router-dom";
 import { useUser } from "@clerk/clerk-react";
 import {
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { ApplyJobDrawer } from "@/components/apply-job";
 import ApplicationCard from "@/components/application-card";
+import LoadError from "@/components/load-error";
 
 import useFetch from "@/hooks/use-fetch";
 import { getSingleJob, updateHiringStatus } from "@/api/apiJobs";
@@ -33,31 +34,40 @@ const JobPage = () => {
 
   const {
     loading: loadingJob,
-    data: job,
+    data: loadedJob,
+    ready,
+    error: errorJob,
     fn: fnJob,
   } = useFetch(getSingleJob, {
     job_id: id,
-  });
+  }, id);
+
+  const job = loadedJob && String(loadedJob.id) === id ? loadedJob : null;
 
   useEffect(() => {
-    if (isLoaded) fnJob();
-  }, [isLoaded, fnJob]);
+    if (isLoaded && ready) fnJob();
+  }, [isLoaded, ready, fnJob, id]);
 
-  const { loading: loadingHiringStatus, fn: fnHiringStatus } = useFetch(
+  const { loading: loadingHiringStatus, error: errorHiringStatus, fn: fnHiringStatus } = useFetch(
     updateHiringStatus,
     {
       job_id: id,
-    }
+    },
+    id
   );
 
   const handleStatusChange = (value) => {
+    if (!job || !ready || loadingHiringStatus) return;
     const isOpen = value === "open";
-    fnHiringStatus(isOpen).then(() => fnJob());
+    fnHiringStatus(isOpen).then((result) => { if (!result.error && result.isCurrent()) fnJob(); });
   };
 
-  if (!isLoaded || loadingJob) {
+  if (!isLoaded || !ready || loadingJob || loadingJob === null) {
     return <BarLoader className="mb-4" width={"100%"} color="var(--primary)" />;
   }
+
+  if (errorJob && !job)
+    return <LoadError message="Unable to load this job. Please refresh and try again." />;
 
   if (!job) {
     return (
@@ -75,6 +85,11 @@ const JobPage = () => {
 
   return (
     <div className="flex flex-col gap-7 px-4 py-6 sm:px-0">
+      {errorJob && (
+        <p role="alert" className="text-destructive">
+          Could not refresh this job. Showing the last loaded version.
+        </p>
+      )}
       <section className="rounded-md border border-border bg-card p-5 sm:p-7">
         <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div className="min-w-0">
@@ -144,8 +159,8 @@ const JobPage = () => {
       {job?.recruiter_id === user?.id && (
         <Select
           onValueChange={handleStatusChange}
-          defaultValue={job?.isOpen ? "open" : "closed"}
-          disabled={loadingHiringStatus}
+          value={job?.isOpen ? "open" : "closed"}
+          disabled={!ready || loadingHiringStatus}
         >
           <SelectTrigger
             className={`h-12 w-full border-border font-bold ${
@@ -165,7 +180,9 @@ const JobPage = () => {
         </Select>
       )}
 
-      <section className="grid gap-5 lg:grid-cols-[1fr_320px]">
+      {errorHiringStatus && <p role="alert" className="text-destructive">{errorHiringStatus.message}</p>}
+
+      <section className="grid gap-5 lg:grid-cols-[1fr_320px] items-start">
         <div className="rounded-md border border-border bg-card p-5 sm:p-6">
           <div className="mb-4 flex items-center gap-2">
             <CheckCircle2 size={20} className="text-primary" />
@@ -184,6 +201,7 @@ const JobPage = () => {
           {job?.recruiter_id !== user?.id && (
             <div className="mt-5">
               <ApplyJobDrawer
+                key={job.id}
                 job={job}
                 user={user}
                 fetchJob={fnJob}
@@ -205,7 +223,7 @@ const JobPage = () => {
         <h2 className="mb-4 text-2xl font-black sm:text-3xl">
           What we are looking for
         </h2>
-        <MDEditor.Markdown
+        <SafeMarkdown
           source={job?.requirements}
           style={{ backgroundColor: "transparent" }}
           className="text-base leading-7 sm:text-lg"

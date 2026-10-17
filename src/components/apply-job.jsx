@@ -26,6 +26,8 @@ import {
   Wrench,
 } from "lucide-react";
 
+const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
+
 const schema = z.object({
   experience: z
     .number()
@@ -45,7 +47,10 @@ const schema = z.object({
           file[0].type ===
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
       { message: "Only PDF or Word documents are allowed" }
-    ),
+    )
+    .refine((file) => file?.[0] && file[0].size <= MAX_RESUME_SIZE_BYTES, {
+      message: "Resume must be 5MB or smaller",
+    }),
 });
 
 export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
@@ -63,7 +68,7 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
     loading: loadingApply,
     error: errorApply,
     fn: fnApply,
-  } = useFetch(applyToJob);
+  } = useFetch(applyToJob, {}, job.id);
 
   const onSubmit = (data) => {
     fnApply({
@@ -73,7 +78,8 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
       name: user.fullName,
       status: "applied",
       resume: data.resume[0],
-    }).then(() => {
+    }).then((result) => {
+      if (result.error || !result.isCurrent()) return;
       fetchJob();
       reset();
     });
@@ -107,13 +113,14 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
           onSubmit={handleSubmit(onSubmit)}
           className="grid gap-4 px-5 pb-0 sm:px-6"
         >
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 items-start">
             <div className="grid gap-2">
-              <Label className="flex items-center gap-2 text-sm font-black">
+              <Label htmlFor="apply-experience" className="flex items-center gap-2 text-sm font-black">
                 <BriefcaseBusiness size={16} className="text-primary" />
                 Experience
               </Label>
               <Input
+                id="apply-experience"
                 type="number"
                 min="0"
                 placeholder="Years of experience"
@@ -130,11 +137,12 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
             </div>
 
             <div className="grid gap-2">
-              <Label className="flex items-center gap-2 text-sm font-black">
+              <Label htmlFor="apply-skills" className="flex items-center gap-2 text-sm font-black">
                 <Wrench size={16} className="text-primary" />
                 Skills
               </Label>
               <Input
+                id="apply-skills"
                 type="text"
                 placeholder="React, SQL, onboarding"
                 className="h-12 border-border bg-background"
@@ -158,9 +166,9 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
               control={control}
               render={({ field }) => (
                 <RadioGroup
+                  value={field.value ?? ""}
                   onValueChange={field.onChange}
                   className="grid gap-2 rounded-md border border-border bg-background p-4 sm:grid-cols-3"
-                  {...field}
                 >
                   <div className="flex items-center gap-2">
                     <RadioGroupItem value="Intermediate" id="intermediate" />
@@ -185,11 +193,12 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
           </div>
 
           <div className="grid gap-2">
-            <Label className="flex items-center gap-2 text-sm font-black">
+            <Label htmlFor="apply-resume" className="flex items-center gap-2 text-sm font-black">
               <FileUp size={16} className="text-primary" />
               Resume
             </Label>
             <Input
+              id="apply-resume"
               type="file"
               accept=".pdf, .doc, .docx"
               className="h-12 border-border bg-background file:text-muted-foreground"

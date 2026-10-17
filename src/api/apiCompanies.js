@@ -1,12 +1,11 @@
-import supabaseClient, { supabaseUrl } from "@/utils/supabase";
+import supabaseClient, { assertRowsAffected, supabaseUrl } from "@/utils/supabase";
 
 export async function getCompanies(token) {
   const supabase = await supabaseClient(token);
   const { data, error } = await supabase.from("companies").select("*");
 
   if (error) {
-    console.error("Error fetching Companies:", error);
-    return null;
+    throw error;
   }
 
   return data;
@@ -37,9 +36,9 @@ export async function addNewCompany(token, _, companyData) {
     .select();
 
   if (error) {
-    console.error(error);
-    throw new Error("Error submitting Companys");
+    throw error;
   }
 
+  assertRowsAffected(data, "Company was not created. Check your access and try again.");
   return data;
 }

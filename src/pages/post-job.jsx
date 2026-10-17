@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import useFetch from "@/hooks/use-fetch";
 import { useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import MDEditor from "@uiw/react-md-editor";
+import { SafeMarkdownEditor } from "@/components/safe-markdown";
 import { Country } from "country-state-city";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -74,16 +74,18 @@ const PostJob = () => {
   const {
     loading: loadingCompanies,
     data: companies,
+    error: errorCompanies,
+    ready,
     fn: fnCompanies,
   } = useFetch(getCompanies);
 
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && ready) {
       fnCompanies();
     }
-  }, [isLoaded, fnCompanies]);
+  }, [isLoaded, ready, fnCompanies]);
 
-  if (!isLoaded || loadingCompanies) {
+  if (!isLoaded || !ready || loadingCompanies) {
     return (
       <BarLoader className="mb-4" width={"100%"} color="var(--primary)" />
     );
@@ -146,9 +148,9 @@ const PostJob = () => {
           )}
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-end">
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr_auto] lg:items-start">
           <div className="grid gap-2">
-            <label className="flex items-center gap-2 text-sm font-black">
+            <label className="flex items-center gap-2 text-sm font-black leading-5">
               <MapPinIcon size={16} className="text-primary" />
               Location
             </label>
@@ -180,7 +182,7 @@ const PostJob = () => {
           </div>
 
           <div className="grid gap-2">
-            <label className="flex items-center gap-2 text-sm font-black">
+            <label className="flex items-center gap-2 text-sm font-black leading-5">
               <Building2 size={16} className="text-primary" />
               Company
             </label>
@@ -193,7 +195,7 @@ const PostJob = () => {
                     <SelectValue placeholder="Company">
                       {field.value
                         ? companies?.find(
-                            (com) => com.id === Number(field.value)
+                            (com) => String(com.id) === field.value
                           )?.name
                         : "Company"}
                     </SelectValue>
@@ -215,9 +217,22 @@ const PostJob = () => {
                 {errors.company_id.message}
               </p>
             )}
+            {errorCompanies && (
+              <p role="alert" className="text-sm font-semibold text-destructive">
+                Could not load companies. Please refresh and try again.
+              </p>
+            )}
           </div>
 
-          <AddCompanyDrawer fetchCompanies={fnCompanies} />
+          <div className="grid gap-2">
+            <span
+              className="hidden text-sm font-black leading-5 select-none text-transparent lg:inline-flex lg:items-center gap-2"
+              aria-hidden="true"
+            >
+              &nbsp;
+            </span>
+            <AddCompanyDrawer fetchCompanies={fnCompanies} />
+          </div>
         </div>
 
         <div className="grid gap-2">
@@ -230,7 +245,7 @@ const PostJob = () => {
               name="requirements"
               control={control}
               render={({ field }) => (
-                <MDEditor value={field.value} onChange={field.onChange} />
+                <SafeMarkdownEditor value={field.value} onChange={field.onChange} />
               )}
             />
           </div>
@@ -254,7 +269,7 @@ const PostJob = () => {
         {loadingCreateJob && (
           <BarLoader width={"100%"} color="var(--primary)" />
         )}
-        <Button type="submit" size="lg" className="mt-1 font-black">
+        <Button type="submit" size="lg" className="mt-1 font-black" disabled={loadingCreateJob}>
           Submit
         </Button>
       </form>

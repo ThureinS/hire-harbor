@@ -19,9 +19,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { updateApplicationStatus } from "@/api/apiApplication";
+import { getResumeSignedUrl, updateApplicationStatus } from "@/api/apiApplication";
 import useFetch from "@/hooks/use-fetch";
 import { BarLoader } from "react-spinners";
+import { useEffect, useState } from "react";
 
 const statusStyles = {
   applied: "border-primary/30 bg-primary/10 text-primary",
@@ -31,22 +32,66 @@ const statusStyles = {
 };
 
 const ApplicationCard = ({ application, isCandidate = false }) => {
-  const handleDownload = () => {
-    const link = document.createElement("a");
-    link.href = application?.resume;
-    link.target = "_blank";
-    link.click();
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState(null);
+
+  const { fn: fnGetResumeUrl } = useFetch(
+    getResumeSignedUrl,
+    { resume: application?.resume },
+    application?.id
+  );
+
+  const handleDownload = async () => {
+    if (!application?.resume) return;
+    setDownloading(true);
+    setDownloadError(null);
+    try {
+      const result = await fnGetResumeUrl();
+      if (result.error) {
+        if (application.resume.startsWith("http://") || application.resume.startsWith("https://")) {
+          const link = document.createElement("a");
+          link.href = application.resume;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.click();
+          return;
+        }
+        setDownloadError(result.error.message || "Failed to download resume");
+        return;
+      }
+      const url = result.data;
+      if (url) {
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.click();
+      }
+    } catch (err) {
+      setDownloadError(err.message || "Failed to download resume");
+    } finally {
+      setDownloading(false);
+    }
   };
 
-  const { loading: loadingHiringStatus, fn: fnHiringStatus } = useFetch(
+  const { loading: loadingHiringStatus, error: errorHiringStatus, fn: fnHiringStatus } = useFetch(
     updateApplicationStatus,
     {
       application_id: application.id,
-    }
+    },
+    application.id
   );
 
+  const [displayedStatus, setDisplayedStatus] = useState(application.status);
+
+  useEffect(() => {
+    setDisplayedStatus(application.status);
+  }, [application.status]);
+
   const handleStatusChange = (status) => {
-    fnHiringStatus(status);
+    fnHiringStatus(status).then((result) => {
+      if (!result.error && result.isCurrent()) setDisplayedStatus(status);
+    });
   };
 
   const submittedAt = application?.created_at
@@ -75,15 +120,18 @@ const ApplicationCard = ({ application, isCandidate = false }) => {
           </div>
           <button
             type="button"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:opacity-50"
             onClick={handleDownload}
+            disabled={downloading}
             aria-label="Download resume"
           >
-            <Download size={18} />
+            <Download size={18} className={downloading ? "animate-pulse" : ""} />
           </button>
         </div>
       </CardHeader>
 
+      {errorHiringStatus && <p role="alert" className="px-5 text-destructive">{errorHiringStatus.message}</p>}
+      {downloadError && <p role="alert" className="px-5 text-destructive">{downloadError}</p>}
       <CardContent className="flex flex-col gap-4 p-5">
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-md border border-border bg-background p-3">
@@ -126,10 +174,10 @@ const ApplicationCard = ({ application, isCandidate = false }) => {
         ) : (
           <Select
             onValueChange={handleStatusChange}
-            defaultValue={application.status}
+            value={displayedStatus}
             disabled={loadingHiringStatus}
           >
-            <SelectTrigger className="h-11 w-full border-border bg-background font-bold sm:w-52">
+            <SelectTrigger aria-label="Application status" className="h-11 w-full border-border bg-background font-bold sm:w-52">
               <SelectValue placeholder="Application Status" />
             </SelectTrigger>
             <SelectContent>

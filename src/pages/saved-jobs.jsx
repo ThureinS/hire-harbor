@@ -1,5 +1,6 @@
 import { getSavedJobs } from "@/api/apiJobs";
 import JobCard from "@/components/job-card";
+import LoadError from "@/components/load-error";
 import useFetch from "@/hooks/use-fetch";
 import { useUser } from "@clerk/clerk-react";
 import { useEffect } from "react";
@@ -7,25 +8,29 @@ import { BarLoader } from "react-spinners";
 import { BookmarkCheck } from "lucide-react";
 
 const SavedJobs = () => {
-  const { isLoaded } = useUser();
+  const { user, isLoaded } = useUser();
 
   const {
     loading: loadingSavedJobs,
     data: savedJobs,
+    error: loadError,
+    ready,
     fn: fnSavedJobs,
-  } = useFetch(getSavedJobs);
+  } = useFetch(getSavedJobs, { user_id: user?.id });
 
   useEffect(() => {
-    if (isLoaded) {
+    if (isLoaded && ready && user?.id) {
       fnSavedJobs();
     }
-  }, [isLoaded, fnSavedJobs]);
+  }, [isLoaded, ready, user?.id, fnSavedJobs]);
 
-  if (!isLoaded || loadingSavedJobs) {
+  if (!isLoaded || !ready || loadingSavedJobs) {
     return (
       <BarLoader className="mb-4" width={"100%"} color="var(--primary)" />
     );
   }
+
+  if (loadError) return <LoadError />;
 
   return (
     <div className="flex flex-col gap-7 px-4 py-6 sm:px-0">

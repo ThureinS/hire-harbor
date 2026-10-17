@@ -3,6 +3,7 @@ import ApplicationCard from "./application-card";
 import { useEffect } from "react";
 import { getApplications } from "@/api/apiApplication";
 import useFetch from "@/hooks/use-fetch";
+import LoadError from "./load-error";
 import { BarLoader } from "react-spinners";
 
 const CreatedApplications = () => {
@@ -11,20 +12,24 @@ const CreatedApplications = () => {
   const {
     loading: loadingApplications,
     data: applications,
+    error: loadError,
+    ready,
     fn: fnApplications,
   } = useFetch(getApplications, {
-    user_id: user.id,
+    user_id: user?.id,
   });
 
   useEffect(() => {
-    fnApplications();
-  }, [fnApplications]);
+    if (ready && user?.id) fnApplications();
+  }, [ready, user?.id, fnApplications]);
 
-  if (loadingApplications) {
+  if (!ready || loadingApplications) {
     return (
       <BarLoader className="mb-4" width={"100%"} color="var(--primary)" />
     );
   }
+
+  if (loadError) return <LoadError />;
 
   return (
     <div className="flex flex-col gap-4">

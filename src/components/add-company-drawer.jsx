@@ -16,7 +16,9 @@ import { useForm } from "react-hook-form";
 import useFetch from "@/hooks/use-fetch";
 import { addNewCompany } from "@/api/apiCompanies";
 import { BarLoader } from "react-spinners";
-import { useEffect } from "react";
+import { useState } from "react";
+
+const MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
 
 const schema = z.object({
   name: z.string().min(1, { message: "Company name is required" }),
@@ -24,16 +26,21 @@ const schema = z.object({
     .any()
     .refine(
       (file) =>
-        file[0] &&
+        file?.[0] &&
         (file[0].type === "image/png" || file[0].type === "image/jpeg"),
       {
         message: "Only Images are allowed",
       }
-    ),
+    )
+    .refine((file) => file?.[0] && file[0].size <= MAX_LOGO_SIZE_BYTES, {
+      message: "Logo must be 2MB or smaller",
+    }),
 });
 
 const AddCompanyDrawer = ({ fetchCompanies }) => {
+  const [open, setOpen] = useState(false);
   const {
+    reset,
     register,
     handleSubmit,
     formState: { errors },
@@ -44,25 +51,23 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
   const {
     loading: loadingAddCompany,
     error: errorAddCompany,
-    data: dataAddCompany,
     fn: fnAddCompany,
   } = useFetch(addNewCompany);
 
   const onSubmit = async (data) => {
-    fnAddCompany({
+    const result = await fnAddCompany({
       ...data,
       logo: data.logo[0],
     });
-  };
-
-  useEffect(() => {
-    if (dataAddCompany?.length > 0) {
+    if (!result.error && result.isCurrent()) {
+      reset();
+      setOpen(false);
       fetchCompanies();
     }
-  }, [dataAddCompany, fetchCompanies]);
+  };
 
   return (
-    <Drawer>
+    <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
         <Button
           type="button"
@@ -83,10 +88,14 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
           </DrawerDescription>
         </DrawerHeader>
         <form
-          onSubmit={handleSubmit(onSubmit)}
+          onSubmit={(event) => {
+            event.stopPropagation();
+            handleSubmit(onSubmit)(event);
+          }}
           className="grid gap-4 px-5 pb-0 sm:grid-cols-[1fr_1fr_auto] sm:px-6"
         >
           <Input
+            aria-label="Company name"
             placeholder="Company name"
             className="h-12 border-border bg-background"
             {...register("name")}
@@ -94,6 +103,7 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
 
           <Input
             type="file"
+            aria-label="Company logo"
             accept="image/*"
             className="h-12 border-border bg-background file:text-muted-foreground"
             {...register("logo")}
@@ -101,6 +111,7 @@ const AddCompanyDrawer = ({ fetchCompanies }) => {
 
           <Button
             type="submit"
+            disabled={loadingAddCompany}
             className="h-12 whitespace-nowrap font-black"
           >
             Add

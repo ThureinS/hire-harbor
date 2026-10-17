@@ -1,28 +1,30 @@
 import { useUser } from "@clerk/clerk-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BarLoader } from "react-spinners";
 import { ArrowRight, BriefcaseBusiness, UserRound } from "lucide-react";
 
 const Onboarding = () => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+  const [roleError, setRoleError] = useState(null);
 
   const navigateUser = useCallback((currRole) => {
     navigate(currRole === "recruiter" ? "/post-job" : "/jobs");
   }, [navigate]);
 
   const handleRoleSelection = async (role) => {
-    await user
-      .update({ unsafeMetadata: { role } })
-      .then(() => {
-        console.log(`Role updated to: ${role}`);
-        navigateUser(role);
-      })
-      .catch((err) => {
-        console.error("Error updating role:", err);
-      });
+    setIsUpdatingRole(true);
+    setRoleError(null);
+    try {
+      await user.update({ unsafeMetadata: { role } });
+      navigateUser(role);
+    } catch {
+      setRoleError("Could not save your role. Please try again.");
+      setIsUpdatingRole(false);
+    }
   };
 
   useEffect(() => {
@@ -52,9 +54,16 @@ const Onboarding = () => {
         </p>
       </section>
 
+      {roleError && (
+        <p role="alert" className="mt-4 text-sm font-semibold text-destructive">
+          {roleError}
+        </p>
+      )}
+
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <Button
           variant="outline"
+          disabled={isUpdatingRole}
           className="group h-auto min-h-44 justify-between rounded-md border-border bg-card p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:bg-card hover:shadow-lg"
           onClick={() => handleRoleSelection("candidate")}
         >
@@ -76,6 +85,7 @@ const Onboarding = () => {
         </Button>
         <Button
           variant="outline"
+          disabled={isUpdatingRole}
           className="group h-auto min-h-44 justify-between rounded-md border-border bg-card p-5 text-left transition-all duration-200 hover:-translate-y-1 hover:border-primary/40 hover:bg-card hover:shadow-lg"
           onClick={() => handleRoleSelection("recruiter")}
         >

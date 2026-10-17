@@ -4,7 +4,7 @@ import {
   Heart,
   MapPinIcon,
   Trash2Icon,
-  Users,
+  Briefcase,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import {
@@ -31,34 +31,38 @@ const JobCard = ({
 
   const { user } = useUser();
 
-  const { loading: loadingDeleteJob, fn: fnDeleteJob } = useFetch(deleteJob, {
+  const { loading: loadingDeleteJob, error: errorDeleteJob, fn: fnDeleteJob } = useFetch(deleteJob, {
     job_id: job.id,
-  });
+  }, job.id);
 
   const {
     loading: loadingSavedJob,
-    data: savedJob,
+    error: errorSavedJob,
     fn: fnSavedJob,
   } = useFetch(saveJob, {
     alreadySaved: saved,
-  });
+  }, job.id);
 
   const handleSaveJob = async () => {
-    await fnSavedJob({
+    const result = await fnSavedJob({
       user_id: user.id,
       job_id: job.id,
     });
-    onJobAction();
+    if (!result.error && result.isCurrent()) {
+      setSaved(!saved);
+      onJobAction();
+    }
   };
 
   const handleDeleteJob = async () => {
-    await fnDeleteJob();
-    onJobAction();
+    if (!window.confirm(`Delete "${job.title}" and its applications? This cannot be undone.`)) return;
+    const result = await fnDeleteJob();
+    if (!result.error && result.isCurrent()) onJobAction();
   };
 
   useEffect(() => {
-    if (savedJob !== undefined) setSaved(savedJob?.length > 0);
-  }, [savedJob]);
+    setSaved(savedInit);
+  }, [savedInit]);
 
   const summary = job?.description
     ? job.description.includes(".")
@@ -100,6 +104,7 @@ const JobCard = ({
               size="icon"
               className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
               onClick={handleDeleteJob}
+              disabled={loadingDeleteJob}
               aria-label={`Delete ${job.title}`}
             >
               <Trash2Icon size={18} />
@@ -119,10 +124,10 @@ const JobCard = ({
           </div>
           <div className="rounded-md border border-border bg-background p-3">
             <p className="flex items-center gap-2 text-xs font-bold uppercase text-muted-foreground">
-              <Users size={14} />
-              Applicants
+              <Briefcase size={14} />
+              Hiring
             </p>
-            <p className="mt-1 font-bold">{job.applications?.length ?? 0}</p>
+            <p className="mt-1 font-bold">{job.isOpen ? "Open" : "Closed"}</p>
           </div>
         </div>
         <p className="line-clamp-3 text-sm leading-6 text-muted-foreground">
@@ -130,6 +135,7 @@ const JobCard = ({
         </p>
       </CardContent>
 
+      {(errorDeleteJob || errorSavedJob) && <p role="alert" className="px-5 pb-3 text-sm text-destructive">{(errorDeleteJob || errorSavedJob).message}</p>}
       <CardFooter className="gap-2 p-5 pt-0">
         <Button asChild className="flex-1 font-bold">
           <Link to={`/job/${job.id}`}>
