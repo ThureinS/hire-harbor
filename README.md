@@ -172,21 +172,12 @@ CREATE INDEX idx_saved_jobs_user ON saved_jobs(user_id);
 - `company-logo` - **Public** ✅
 - `resumes` - **Private** (requires authenticated access)
 
-Private storage is not implemented in the current app: `apiApplication.js` writes public URLs, and application cards open those URLs directly. Switching only the bucket visibility will break downloads.
+Private storage is implemented in the app: `apiApplication.js` persists object paths and `application-card.jsx` requests fresh signed URLs (`getResumeSignedUrl`) with 1-hour expiry on download, with backwards-compatible fallback for legacy public files.
 
-For private storage, persist an object path, enforce upload/read policies for the candidate and the job's recruiter, and generate a fresh short-lived URL when an authorized user downloads the resume. Do not persist an expiring signed URL as the permanent application record. Existing public URLs/files also need a migration plan.
+To configure private storage and hardened RLS policies in Supabase, execute the SQL migration script:
+[`supabase/migrations/20261019_storage_and_rls_security.sql`](file:///Users/thureinsoe/Learning/uniProject/hire-harbor/supabase/migrations/20261019_storage_and_rls_security.sql)
 
-Example for the future authorized download handler (not the current implementation):
-
-```javascript
-// objectPath is loaded from the authorized application record.
-const { data: signedUrlData, error } = await supabase.storage
-  .from("resumes")
-  .createSignedUrl(objectPath, 3600); // URL expires in 1 hour
-
-if (error) throw error;
-const downloadUrl = signedUrlData.signedUrl;
-```
+See the full setup guide in [`docs/supabase-rls-guide.md`](file:///Users/thureinsoe/Learning/uniProject/hire-harbor/docs/supabase-rls-guide.md).
 
 #### Set Up Row Level Security (RLS)
 

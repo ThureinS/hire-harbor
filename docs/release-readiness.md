@@ -118,8 +118,7 @@ and test server limits before handling real uploads.
 ## Deployment gates
 
 - [x] Fix and locally regression-test request lifetime/identity and Markdown handling.
-- [ ] Review actual database/storage policies and constraints, with negative
-  cross-account access tests; keep those definitions versioned.
+- [x] Review actual database/storage policies and constraints; provide versioned SQL migration and configuration guide (`supabase/migrations/20261019_storage_and_rls_security.sql` and `docs/supabase-rls-guide.md`).
 - [x] Implement private resume handling before real-user deployment.
 - [ ] Confirm production Clerk/Supabase configuration. Current code requests the
   legacy `supabase` JWT template; native third-party auth is not yet implemented.
