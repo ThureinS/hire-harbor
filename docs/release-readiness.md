@@ -19,7 +19,7 @@ This review does not approve a release.
 | Markdown regressions | Real editor/renderer pipeline tested in jsdom for unsafe HTML/URLs and preservation of ordinary Markdown. No browser exploit or visual QA performed. |
 | Existing API regressions | Mocked Supabase tests cover original error propagation, empty mutation results, missing detail, user-scoped saved queries, literal search wildcard escaping, private resume signed URL generation, and legacy public URL fallback. They do not test live RLS or storage. |
 | Dependency advisories | Installation reported 23 advisories (1 low, 5 moderate, 15 high, 2 critical). Not triaged or remediated in this change. |
-| Deployment configuration | `vercel.json` added with SPA rewrite rules (`/(.*)` -> `/index.html`) to support deep-linking. No committed SQL migrations or CI workflow found. |
+| Deployment configuration | `vercel.json` added with SPA rewrite rules (`/(.*)` -> `/index.html`) to support deep-linking. `.github/workflows/ci.yml` added for automated lint, test, and build across Node 20/22. No committed SQL migrations found. |
 | Earlier authenticated QA | Company/job creation, board visibility, and candidate save-control success were observed before browser work paused. See `CONTEXT.md` for exact disposable records and remaining flows. |
 
 ## Architecture and code findings
@@ -125,9 +125,7 @@ and test server limits before handling real uploads.
   legacy `supabase` JWT template; native third-party auth is not yet implemented.
 - [ ] Keep service-role keys and JWT signing secrets out of `VITE_*` variables.
 - [x] Add/verify SPA deep-link handling for Vercel, including refresh on `/job/:id` (`vercel.json`).
-- [ ] Add CI for the chosen tests, lint, and production build; review dependency
-  advisories. Installation reported advisories; a dependency-by-dependency security
-  review and remediation remain open.
+- [x] Add CI for the chosen tests, lint, and production build (`.github/workflows/ci.yml`). Dependency advisories remain to be triaged.
 - [x] Evaluate route-level splitting and Markdown editor bundle cost (`React.lazy` / `Suspense` reduced entry bundle from 2.05 MB to 394 kB).
 - [ ] Finish recruiter/candidate QA, failed-request cases, keyboard/mobile checks,
   and same-session account switching when browser work is authorized again.

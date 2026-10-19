@@ -52,6 +52,7 @@ Implemented:
 - Both the requirements editor preview and job detail use shared `SafeMarkdown` components with `rehype-sanitize` appended after HTML parsing, rewriting, and highlighting. The default allowlist removes unsafe HTML, attributes, and URL schemes.
 - Route-level code-splitting with `React.lazy` and `Suspense` in `App.jsx` and `app-layout.jsx` splits all application routes into dynamic chunks. Main JS entry bundle reduced from 2,055.36 kB down to 394.45 kB.
 - `vercel.json` provides SPA rewrite rules (`/(.*)` -> `/index.html`) to ensure deep routes like `/job/:id` don't 404 on deployment.
+- `.github/workflows/ci.yml` sets up automated GitHub Actions CI running lint, test suite (82 tests), and production build across Node 20 and Node 22 on push and pull requests.
 - `apiApplication.js` transitions resume persistence from public URLs to private storage object paths, with short-lived signed URL retrieval (`getResumeSignedUrl`) and orphaned file cleanup on insert failure. `ApplicationCard` downloads via signed URLs with backwards-compatible fallback for legacy public URLs.
 
 Verification and evidence (updated 2026-10-18):
