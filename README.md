@@ -4,6 +4,8 @@ A modern, full-featured job board platform built with React and Supabase. HireHa
 
 > **Note**: This is a learning project developed as part of a tutorial to practice modern web development technologies.
 
+Current implementation status and remaining release gates are tracked in [CONTEXT.md](CONTEXT.md) and [the release-readiness review](docs/release-readiness.md). A passing build does not establish production readiness.
+
 ## 🚀 Live Demo
 
 Check out the live application: [https://hire-harbor-roan.vercel.app/](https://hire-harbor-roan.vercel.app/)
@@ -23,7 +25,7 @@ Check out the live application: [https://hire-harbor-roan.vercel.app/](https://h
 ### For Recruiters
 
 - **Post Jobs**: Create detailed job listings with markdown support
-- **Manage Jobs**: View, edit, and delete your posted positions
+- **Manage Jobs**: View and delete your posted positions, and change hiring status
 - **Company Management**: Add and manage company profiles with logo uploads
 - **Toggle Hiring Status**: Open or close job postings as needed
 - **View Applications**: Review all applications for your posted jobs
@@ -66,7 +68,7 @@ Check out the live application: [https://hire-harbor-roan.vercel.app/](https://h
 
 Before you begin, ensure you have the following installed:
 
-- **Node.js** (v18 or higher)
+- **Node.js** (20.19+ on Node 20, or 22.12+; required by the installed Vite 7 version)
 - **npm** or **yarn**
 - A **Supabase** account ([supabase.com](https://supabase.com))
 - A **Clerk** account ([clerk.com](https://clerk.com))
@@ -83,7 +85,7 @@ cd HireHarbor
 ### 2. Install Dependencies
 
 ```bash
-npm install
+npm ci
 ```
 
 ### 3. Set Up Supabase
@@ -95,7 +97,9 @@ npm install
 
 #### Create Database Tables
 
-Run the following SQL in your Supabase SQL Editor:
+The SQL below is a starting schema for a new disposable environment, not a versioned production migration or a dump of the existing QA database. Do not rerun it against an existing database without reviewing its current schema and policies.
+
+Run the following SQL in your new Supabase project's SQL Editor:
 
 ```sql
 -- Companies table
@@ -168,21 +172,17 @@ CREATE INDEX idx_saved_jobs_user ON saved_jobs(user_id);
 - `company-logo` - **Public** ✅
 - `resumes` - **Private** (requires authenticated access)
 
-If using private buckets, you'll need to modify `apiApplication.js` to generate signed URLs:
+Private storage is implemented in the app: `apiApplication.js` persists object paths and `application-card.jsx` requests fresh signed URLs (`getResumeSignedUrl`) with 1-hour expiry on download, with backwards-compatible fallback for legacy public files.
 
-```javascript
-// Example: Generate signed URL for private resume access
-const { data: signedUrlData } = await supabase.storage
-  .from("resumes")
-  .createSignedUrl(fileName, 3600); // URL expires in 1 hour
+To configure private storage and hardened RLS policies in Supabase, execute the SQL migration script:
+[`supabase/migrations/20261019_storage_and_rls_security.sql`](file:///Users/thureinsoe/Learning/uniProject/hire-harbor/supabase/migrations/20261019_storage_and_rls_security.sql)
 
-const resume = signedUrlData.signedUrl;
-```
+See the full setup guide in [`docs/supabase-rls-guide.md`](file:///Users/thureinsoe/Learning/uniProject/hire-harbor/docs/supabase-rls-guide.md).
 
 #### Set Up Row Level Security (RLS)
 
 > [!IMPORTANT]
-> Row Level Security is critical for protecting user data. Enable RLS on all tables and add appropriate policies before deploying to production.
+> These policies are illustrative ownership checks, not a complete production authorization design. They have not been compared with the deployed QA policies in the current review. Verify cross-account denial, recruiter permissions, application constraints, and storage policies before deploying with real data.
 
 Enable RLS on all tables:
 
@@ -212,29 +212,29 @@ CREATE POLICY "Authenticated users can create companies"
 **Jobs Policies:**
 
 ```sql
--- Anyone can view open jobs
+-- Anyone can view jobs (both open and closed)
 CREATE POLICY "Anyone can view jobs"
   ON jobs FOR SELECT
   USING (true);
 
--- Recruiters can create jobs (user must be authenticated)
+-- An authenticated user can create a job only under their own identity
 CREATE POLICY "Authenticated users can create jobs"
   ON jobs FOR INSERT
   TO authenticated
-  WITH CHECK (true);
+  WITH CHECK ((auth.jwt()->>'sub') = recruiter_id);
 
 -- Recruiters can update their own jobs
 CREATE POLICY "Users can update their own jobs"
   ON jobs FOR UPDATE
   TO authenticated
-  USING (auth.uid()::text = recruiter_id)
-  WITH CHECK (auth.uid()::text = recruiter_id);
+  USING ((auth.jwt()->>'sub') = recruiter_id)
+  WITH CHECK ((auth.jwt()->>'sub') = recruiter_id);
 
 -- Recruiters can delete their own jobs
 CREATE POLICY "Users can delete their own jobs"
   ON jobs FOR DELETE
   TO authenticated
-  USING (auth.uid()::text = recruiter_id);
+  USING ((auth.jwt()->>'sub') = recruiter_id);
 ```
 
 **Applications Policies:**
@@ -244,7 +244,7 @@ CREATE POLICY "Users can delete their own jobs"
 CREATE POLICY "Users can view their own applications"
   ON applications FOR SELECT
   TO authenticated
-  USING (auth.uid()::text = candidate_id);
+  USING ((auth.jwt()->>'sub') = candidate_id);
 
 -- Recruiters can view applications for their jobs
 CREATE POLICY "Recruiters can view applications for their jobs"
@@ -254,7 +254,7 @@ CREATE POLICY "Recruiters can view applications for their jobs"
     EXISTS (
       SELECT 1 FROM jobs
       WHERE jobs.id = applications.job_id
-      AND jobs.recruiter_id = auth.uid()::text
+      AND jobs.recruiter_id = (auth.jwt()->>'sub')
     )
   );
 
@@ -262,7 +262,7 @@ CREATE POLICY "Recruiters can view applications for their jobs"
 CREATE POLICY "Users can create applications"
   ON applications FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid()::text = candidate_id);
+  WITH CHECK ((auth.jwt()->>'sub') = candidate_id);
 
 -- Recruiters can update application status for their jobs
 CREATE POLICY "Recruiters can update applications for their jobs"
@@ -272,7 +272,7 @@ CREATE POLICY "Recruiters can update applications for their jobs"
     EXISTS (
       SELECT 1 FROM jobs
       WHERE jobs.id = applications.job_id
-      AND jobs.recruiter_id = auth.uid()::text
+      AND jobs.recruiter_id = (auth.jwt()->>'sub')
     )
   );
 ```
@@ -284,28 +284,31 @@ CREATE POLICY "Recruiters can update applications for their jobs"
 CREATE POLICY "Users can view their own saved jobs"
   ON saved_jobs FOR SELECT
   TO authenticated
-  USING (auth.uid()::text = user_id);
+  USING ((auth.jwt()->>'sub') = user_id);
 
 -- Users can save jobs
 CREATE POLICY "Users can save jobs"
   ON saved_jobs FOR INSERT
   TO authenticated
-  WITH CHECK (auth.uid()::text = user_id);
+  WITH CHECK ((auth.jwt()->>'sub') = user_id);
 
 -- Users can unsave their own saved jobs
 CREATE POLICY "Users can delete their own saved jobs"
   ON saved_jobs FOR DELETE
   TO authenticated
-  USING (auth.uid()::text = user_id);
+  USING ((auth.jwt()->>'sub') = user_id);
 ```
 
-> [!WARNING] > **Note on Authentication**: These policies use `auth.uid()::text` because Clerk user IDs are stored as text. If you're using Supabase Auth instead, you may need to adjust the policies to match UUID types.
+Clerk user IDs are strings such as `user_...`. Compare them with the JWT's text subject, `auth.jwt()->>'sub'`; `auth.uid()` expects a UUID, and casting its result to text does not fix that mismatch. See the [Clerk integration documentation](https://clerk.com/docs/guides/development/integrations/databases/supabase).
+
+The examples above do not enforce recruiter-only company/job creation, limit recruiter updates to application status, prevent duplicate applications, or reject applications to closed jobs. The UI role is stored in user-editable Clerk `unsafeMetadata`; it is a workflow preference, not a trusted authorization boundary. Add database constraints and appropriately scoped policies/server operations, then test them with separate accounts. Storage object policies must be configured separately.
 
 ### 4. Set Up Clerk Authentication
 
 1. Create a new application at [clerk.com](https://clerk.com)
 2. Enable the authentication methods you want (Email, Google, etc.)
-3. Copy your Publishable Key from the Clerk Dashboard
+3. Copy your Publishable Key from the Clerk Dashboard.
+4. The current code calls `session.getToken({ template: "supabase" })`. The documented QA environment uses that legacy JWT-template integration; an ordinary Clerk sign-in alone is insufficient. Review the [Supabase Clerk integration guide](https://supabase.com/docs/guides/auth/third-party/clerk) before configuring a new environment. Moving to native third-party auth requires coordinated changes to token acquisition and Supabase configuration; it is not implemented here.
 
 ### 5. Configure Environment Variables
 
@@ -320,7 +323,7 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 ```
 
-Replace the placeholder values with your actual credentials.
+Use the matching environment's public browser keys. Never place a Supabase service-role key or a JWT signing secret in a `VITE_*` variable: Vite includes those values in the browser bundle. Keep QA and production projects and Clerk instances separate.
 
 ### 6. Run the Development Server
 
@@ -329,6 +332,33 @@ npm run dev
 ```
 
 The application should now be running at `http://localhost:5173`
+
+### Local verification
+
+```bash
+npm test
+npm run lint
+npm run build
+```
+
+`npm run test:watch` runs the Vitest suite while editing. Tests mount React in
+jsdom with mocked Clerk/Supabase boundaries and exercise the actual Markdown
+editor/renderer. They make no authenticated network requests and do not replace
+browser workflow QA or database/storage authorization tests.
+
+`useFetch(callback, options, resourceKey?)` exposes `ready`; read effects should
+wait for it and depend on `fn` plus their query inputs. `fn` remains stable within
+a session/resource and changes when that owner changes. Options are shallow-copied
+at invocation; keep nested inputs immutable. Only the newest invocation updates
+hook state. A different session/resource hides old data immediately. Mutations
+return `{ data, error, isCurrent }`: check `!error && isCurrent()` before refreshing,
+resetting forms, or navigating. Ignoring a stale response does not cancel a server
+mutation. Pass a resource key when mounted components can move between records.
+
+Use `SafeMarkdown` and `SafeMarkdownEditor` for untrusted requirements. Their
+shared allowlist runs after the Markdown HTML transformations; raw stored Markdown
+is not modified. See [release readiness](docs/release-readiness.md) for current
+test evidence and remaining gates.
 
 ## 📁 Project Structure
 
@@ -396,7 +426,8 @@ HireHarbor/
 1. Push your code to GitHub
 2. Import the project in Vercel
 3. Add environment variables in Vercel dashboard
-4. Deploy!
+4. Complete the [release gates](docs/release-readiness.md) before deploying. The repository does not yet contain a Vercel SPA rewrite configuration; verify direct navigation/refresh on nested routes using the [Vercel Vite guidance](https://vercel.com/docs/frameworks/frontend/vite).
+5. After deployment, smoke-test authentication and both roles against the intended environment.
 
 ### Build for Production
 
@@ -421,7 +452,7 @@ The application supports light and dark modes. Theme preference is stored in loc
 
 ### Styling
 
-Tailwind CSS configuration can be customized in [`tailwind.config.js`](tailwind.config.js). Global styles are in [`src/index.css`](src/index.css).
+Tailwind CSS v4 is integrated through [`vite.config.js`](vite.config.js); theme tokens and global styles are in [`src/index.css`](src/index.css).
 
 ## 🛡️ Security Best Practices
 

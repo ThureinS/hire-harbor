@@ -5,6 +5,7 @@ import { BarLoader } from "react-spinners";
 import useFetch from "@/hooks/use-fetch";
 
 import JobCard from "@/components/job-card";
+import LoadError from "@/components/load-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,6 +29,7 @@ import {
 
 import { getCompanies } from "@/api/apiCompanies";
 import { getJobs } from "@/api/apiJobs";
+import { BriefcaseBusiness, Filter, Search, X } from "lucide-react";
 
 const PAGE_SIZE = 3;
 
@@ -40,11 +42,17 @@ const JobListing = () => {
 
   const { isLoaded } = useUser();
 
-  const { data: companies, fn: fnCompanies } = useFetch(getCompanies);
+  const {
+    data: companies,
+    error: companiesError,
+    ready,
+    fn: fnCompanies,
+  } = useFetch(getCompanies);
 
   const {
     loading: loadingJobs,
     data: jobs,
+    error: loadError,
     fn: fnJobs,
   } = useFetch(getJobs, {
     location,
@@ -56,12 +64,12 @@ const JobListing = () => {
   });
 
   useEffect(() => {
-    if (isLoaded) fnCompanies();
-  }, [isLoaded]);
+    if (isLoaded && ready) fnCompanies();
+  }, [isLoaded, ready, fnCompanies]);
 
   useEffect(() => {
-    if (isLoaded) fnJobs();
-  }, [isLoaded, location, company_id, searchQuery]);
+    if (isLoaded && ready) fnJobs();
+  }, [isLoaded, ready, location, company_id, searchQuery, fnJobs]);
 
   useEffect(() => {
     setPage(1);
@@ -121,34 +129,48 @@ const JobListing = () => {
   const showingFrom = totalCount === 0 ? 0 : startIndex + 1;
   const showingTo = endIndex;
 
-  if (!isLoaded) {
-    return <BarLoader className="mb-4" width={"100%"} color="#36d7b7" />;
+  if (!isLoaded || !ready) {
+    return <BarLoader className="mb-4" width={"100%"} color="var(--primary)" />;
   }
 
   return (
-    <div className="">
-      <h1 className="gradient-title font-extrabold text-6xl sm:text-7xl text-center pb-8">
-        Latest Jobs
-      </h1>
+    <div className="flex flex-col gap-7 px-4 py-6 sm:px-0">
+      <section className="rounded-md border border-border bg-card p-5 sm:p-7">
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
+            Job harbor
+          </p>
+          <h1 className="page-title text-4xl font-black sm:text-6xl">
+            Latest Jobs
+          </h1>
+          <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+            Search the board, narrow by location or company, and scan each role
+            from the same data-first card layout.
+          </p>
+        </div>
 
-      <form
-        onSubmit={handleSearch}
-        className="h-14 flex flex-row w-full gap-2 items-center mb-3"
-      >
-        <Input
-          type="text"
-          placeholder="Search Jobs by Title.."
-          name="search-query"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="h-full flex-1  px-4 text-md"
-        />
-      </form>
+        <form onSubmit={handleSearch} className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Search by title"
+              name="search-query"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-12 rounded-md border-border bg-background pl-12 text-base"
+            />
+          </div>
+          <Button type="submit" className="h-12 font-black">
+            Search
+          </Button>
+        </form>
+      </section>
 
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="grid gap-2 rounded-md border border-border bg-card p-3 sm:grid-cols-[1fr_1fr_auto]">
         <Select value={location} onValueChange={(value) => setLocation(value)}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by Location" />
+          <SelectTrigger className="h-11 border-border bg-background">
+            <SelectValue placeholder="Filter by location" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -165,8 +187,8 @@ const JobListing = () => {
           value={company_id}
           onValueChange={(value) => setCompany_id(value)}
         >
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by Company" />
+          <SelectTrigger className="h-11 border-border bg-background">
+            <SelectValue placeholder="Filter by company" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -178,23 +200,42 @@ const JobListing = () => {
             </SelectGroup>
           </SelectContent>
         </Select>
-
         <Button
-          className="sm:w-1/2"
-          variant="destructive"
+          className="h-11 border-border bg-card font-bold"
+          variant="outline"
           onClick={clearFilters}
         >
-          Clear Filters
+          <X size={17} className="mr-2" />
+          Clear
         </Button>
+
+        {companiesError && (
+          <p role="alert" className="text-sm text-destructive sm:col-span-3">
+            Could not load companies for this filter. Please refresh and try again.
+          </p>
+        )}
       </div>
 
       {loadingJobs && (
-        <BarLoader className="mt-4" width={"100%"} color="#36d7b7" />
+        <BarLoader className="mt-1" width={"100%"} color="var(--primary)" />
       )}
 
-      {loadingJobs === false && (
+      {loadError && <LoadError />}
+
+      {loadingJobs === false && !loadError && (
         <>
-          <div className="mt-8 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+              <BriefcaseBusiness size={17} className="text-primary" />
+              {totalCount} {totalCount === 1 ? "role" : "roles"} available
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Filter size={16} />
+              Showing {showingFrom}-{showingTo}
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {displayedJobs?.length ? (
               displayedJobs.map((job) => (
                 <JobCard
@@ -204,20 +245,16 @@ const JobListing = () => {
                 />
               ))
             ) : (
-              <div>No Jobs Found 😢</div>
+              <div className="rounded-md border border-border bg-card p-8 text-center font-bold text-muted-foreground md:col-span-2 lg:col-span-3">
+                No jobs found.
+              </div>
             )}
           </div>
 
           {totalCount > 0 && (
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-3">
-              <div className="text-sm text-muted-foreground text-center sm:text-left">
-                <p className="w-[200px]">
-                  {"Showing "}
-                  {showingFrom}-{showingTo}
-                </p>
-                {"of "}
-                {totalCount}
-                {" jobs"}
+            <div className="flex flex-col items-center justify-center gap-3 rounded-md border border-border bg-card p-3 sm:flex-row sm:justify-between">
+              <div className="text-center text-sm text-muted-foreground sm:text-left">
+                Showing {showingFrom}-{showingTo} of {totalCount} jobs
               </div>
 
               <Pagination>

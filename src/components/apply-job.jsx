@@ -1,4 +1,3 @@
-/* eslint-disable react/prop-types */
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -19,6 +18,15 @@ import * as z from "zod";
 import useFetch from "@/hooks/use-fetch";
 import { applyToJob } from "@/api/apiApplication";
 import { BarLoader } from "react-spinners";
+import {
+  BriefcaseBusiness,
+  FileUp,
+  GraduationCap,
+  Send,
+  Wrench,
+} from "lucide-react";
+
+const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
 
 const schema = z.object({
   experience: z
@@ -33,11 +41,16 @@ const schema = z.object({
     .any()
     .refine(
       (file) =>
-        file[0] &&
+        file?.[0] &&
         (file[0].type === "application/pdf" ||
-          file[0].type === "application/msword"),
+          file[0].type === "application/msword" ||
+          file[0].type ===
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
       { message: "Only PDF or Word documents are allowed" }
-    ),
+    )
+    .refine((file) => file?.[0] && file[0].size <= MAX_RESUME_SIZE_BYTES, {
+      message: "Resume must be 5MB or smaller",
+    }),
 });
 
 export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
@@ -55,7 +68,7 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
     loading: loadingApply,
     error: errorApply,
     fn: fnApply,
-  } = useFetch(applyToJob);
+  } = useFetch(applyToJob, {}, job.id);
 
   const onSubmit = (data) => {
     fnApply({
@@ -65,97 +78,156 @@ export function ApplyJobDrawer({ user, job, fetchJob, applied = false }) {
       name: user.fullName,
       status: "applied",
       resume: data.resume[0],
-    }).then(() => {
+    }).then((result) => {
+      if (result.error || !result.isCurrent()) return;
       fetchJob();
       reset();
     });
   };
+
+  const disabled = !job?.isOpen || applied;
 
   return (
     <Drawer open={applied ? false : undefined}>
       <DrawerTrigger asChild>
         <Button
           size="lg"
-          variant={job?.isOpen && !applied ? "blue" : "destructive"}
-          disabled={!job?.isOpen || applied}
+          variant={job?.isOpen && !applied ? "default" : "destructive"}
+          className="w-full font-black"
+          disabled={disabled}
         >
           {job?.isOpen ? (applied ? "Applied" : "Apply") : "Hiring Closed"}
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
-        <DrawerHeader>
-          <DrawerTitle>
+      <DrawerContent className="mx-auto max-w-3xl">
+        <DrawerHeader className="px-5 sm:px-6">
+          <DrawerTitle className="text-2xl font-black">
             Apply for {job?.title} at {job?.company?.name}
           </DrawerTitle>
-          <DrawerDescription>Please Fill the form below</DrawerDescription>
+          <DrawerDescription>
+            Submit your experience, skills, education, and resume.
+          </DrawerDescription>
         </DrawerHeader>
 
         <form
           onSubmit={handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 p-4 pb-0"
+          className="grid gap-4 px-5 pb-0 sm:px-6"
         >
-          <Input
-            type="number"
-            placeholder="Years of Experience"
-            className="flex-1"
-            {...register("experience", {
-              valueAsNumber: true,
-            })}
-          />
-          {errors.experience && (
-            <p className="text-red-500">{errors.experience.message}</p>
-          )}
-          <Input
-            type="text"
-            placeholder="Skills (Comma Separated)"
-            className="flex-1"
-            {...register("skills")}
-          />
-          {errors.skills && (
-            <p className="text-red-500">{errors.skills.message}</p>
-          )}
-          <Controller
-            name="education"
-            control={control}
-            render={({ field }) => (
-              <RadioGroup onValueChange={field.onChange} {...field}>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Intermediate" id="intermediate" />
-                  <Label htmlFor="intermediate">Intermediate</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Graduate" id="graduate" />
-                  <Label htmlFor="graduate">Graduate</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Post Graduate" id="post-graduate" />
-                  <Label htmlFor="post-graduate">Post Graduate</Label>
-                </div>
-              </RadioGroup>
+          <div className="grid gap-4 sm:grid-cols-2 items-start">
+            <div className="grid gap-2">
+              <Label htmlFor="apply-experience" className="flex items-center gap-2 text-sm font-black">
+                <BriefcaseBusiness size={16} className="text-primary" />
+                Experience
+              </Label>
+              <Input
+                id="apply-experience"
+                type="number"
+                min="0"
+                placeholder="Years of experience"
+                className="h-12 border-border bg-background"
+                {...register("experience", {
+                  valueAsNumber: true,
+                })}
+              />
+              {errors.experience && (
+                <p className="text-sm font-semibold text-destructive">
+                  {errors.experience.message}
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="apply-skills" className="flex items-center gap-2 text-sm font-black">
+                <Wrench size={16} className="text-primary" />
+                Skills
+              </Label>
+              <Input
+                id="apply-skills"
+                type="text"
+                placeholder="React, SQL, onboarding"
+                className="h-12 border-border bg-background"
+                {...register("skills")}
+              />
+              {errors.skills && (
+                <p className="text-sm font-semibold text-destructive">
+                  {errors.skills.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label className="flex items-center gap-2 text-sm font-black">
+              <GraduationCap size={16} className="text-primary" />
+              Education
+            </Label>
+            <Controller
+              name="education"
+              control={control}
+              render={({ field }) => (
+                <RadioGroup
+                  value={field.value ?? ""}
+                  onValueChange={field.onChange}
+                  className="grid gap-2 rounded-md border border-border bg-background p-4 sm:grid-cols-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="Intermediate" id="intermediate" />
+                    <Label htmlFor="intermediate">Intermediate</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="Graduate" id="graduate" />
+                    <Label htmlFor="graduate">Graduate</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value="Post Graduate" id="post-graduate" />
+                    <Label htmlFor="post-graduate">Post Graduate</Label>
+                  </div>
+                </RadioGroup>
+              )}
+            />
+            {errors.education && (
+              <p className="text-sm font-semibold text-destructive">
+                {errors.education.message}
+              </p>
             )}
-          />
-          {errors.education && (
-            <p className="text-red-500">{errors.education.message}</p>
-          )}
-          <Input
-            type="file"
-            accept=".pdf, .doc, .docx"
-            className="flex-1 file:text-gray-500"
-            {...register("resume")}
-          />
-          {errors.resume && (
-            <p className="text-red-500">{errors.resume.message}</p>
-          )}
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="apply-resume" className="flex items-center gap-2 text-sm font-black">
+              <FileUp size={16} className="text-primary" />
+              Resume
+            </Label>
+            <Input
+              id="apply-resume"
+              type="file"
+              accept=".pdf, .doc, .docx"
+              className="h-12 border-border bg-background file:text-muted-foreground"
+              {...register("resume")}
+            />
+            {errors.resume && (
+              <p className="text-sm font-semibold text-destructive">
+                {errors.resume.message}
+              </p>
+            )}
+          </div>
           {errorApply?.message && (
-            <p className="text-red-500">{errorApply?.message}</p>
+            <p className="text-sm font-semibold text-destructive">
+              {errorApply?.message}
+            </p>
           )}
-          {loadingApply && <BarLoader width={"100%"} color="#36d7b7" />}
-          <Button type="submit" variant="blue" size="lg">
-            Apply
+          {loadingApply && <BarLoader width={"100%"} color="var(--primary)" />}
+          <Button
+            type="submit"
+            size="lg"
+            className="font-black"
+            disabled={loadingApply}
+          >
+            <Send size={17} className="mr-2" />
+            {loadingApply ? "Submitting" : "Submit application"}
           </Button>
         </form>
 
-        <DrawerFooter>
+        <DrawerFooter className="px-5 sm:px-6">
           <DrawerClose asChild>
             <Button variant="outline">Cancel</Button>
           </DrawerClose>
