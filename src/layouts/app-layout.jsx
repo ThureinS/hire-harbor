@@ -1,11 +1,12 @@
 import Header from "@/components/header";
-import { Outlet } from "react-router-dom";
+import { Outlet, ScrollRestoration } from "react-router-dom";
 import { Suspense } from "react";
 import { BarLoader } from "react-spinners";
 
 const AppLayout = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <ScrollRestoration />
       <main className="min-h-screen container mx-auto">
         <Header />
         <Suspense fallback={<BarLoader width={"100%"} color="var(--primary)" />}>

@@ -120,6 +120,7 @@ ON CONFLICT (id) DO UPDATE SET
 -- ============================================================================
 
 -- 4.1 Company Logo bucket policies
+DROP POLICY IF EXISTS "Public can read company logos" ON storage.objects;
 DROP POLICY IF EXISTS "Company logos are publicly accessible" ON storage.objects;
 CREATE POLICY "Company logos are publicly accessible"
   ON storage.objects FOR SELECT
@@ -132,6 +133,9 @@ CREATE POLICY "Authenticated users can upload company logos"
   WITH CHECK (bucket_id = 'company-logo');
 
 -- 4.2 Resumes bucket policies (Private & Authenticated Access)
+-- Drop legacy permissive QA policies
+DROP POLICY IF EXISTS "Public can read resumes for QA" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload resumes" ON storage.objects;
 -- Candidates can upload their resume (named resume-<random>-<candidate_id>.<ext>)
 DROP POLICY IF EXISTS "Candidates can upload their own resume" ON storage.objects;
 CREATE POLICY "Candidates can upload their own resume"
