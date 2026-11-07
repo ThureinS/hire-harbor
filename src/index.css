@@ -130,3 +130,13 @@
   padding-left: 25px;
   color: white;
 }
+
+/* Protect Demo Accounts from account modifications/deletion */
+body:has([data-demo-user="true"]) .cl-userButtonPopoverActionButton__manageAccount,
+body:has([data-demo-user="true"]) .cl-userButtonPopoverActionButton[data-localization-key="userButton.action__manageAccount"],
+body:has([data-demo-user="true"]) button:has(> [data-localization-key="userButton.action__manageAccount"]),
+body:has([data-demo-user="true"]) .cl-profileSection__danger,
+body:has([data-demo-user="true"]) .cl-profileSection__password,
+body:has([data-demo-user="true"]) .cl-userProfile-danger {
+  display: none !important;
+}

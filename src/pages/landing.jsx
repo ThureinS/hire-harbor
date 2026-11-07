@@ -23,6 +23,7 @@ import {
   Search,
   ShipWheel,
 } from "lucide-react";
+import DemoAccessCard from "@/components/demo-access-card";
 
 const loopSteps = [
   {
@@ -120,6 +121,11 @@ const LandingPage = () => {
             </Button>
           </div>
         </div>
+      </section>
+
+      {/* Evaluator / Reviewer Quick Demo Access */}
+      <section className="w-full">
+        <DemoAccessCard />
       </section>
 
       <Carousel

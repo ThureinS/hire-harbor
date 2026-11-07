@@ -10,6 +10,18 @@ Current implementation status and remaining release gates are tracked in [CONTEX
 
 Check out the live application: [https://hire-harbor-roan.vercel.app/](https://hire-harbor-roan.vercel.app/)
 
+### ⚡ Quick Demo Accounts (For Evaluators & Reviewers)
+
+Experience both sides of the marketplace without registering:
+
+| Role | Default Email | Default Password | What You Can Test |
+| :--- | :--- | :--- | :--- |
+| **Candidate** (Job Seeker) | `candidate.demo@hireharbor.dev` | `DemoHarbor2026!` | Search jobs, apply with PDF/DOCX resume upload, save jobs, and track application progress |
+| **Recruiter** (Employer) | `recruiter.demo@hireharbor.dev` | `DemoHarbor2026!` | Post vacancies with Markdown editor, add companies with logos, review candidate resumes, and update hiring pipeline status |
+
+> **Tip**: Use the **Instant 1-Click Login** buttons directly on the landing page or login dialog to sign in immediately without manual typing.
+
+
 ## ✨ Features
 
 ### For Job Seekers

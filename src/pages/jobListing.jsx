@@ -31,7 +31,8 @@ import { getCompanies } from "@/api/apiCompanies";
 import { getJobs } from "@/api/apiJobs";
 import { BriefcaseBusiness, Filter, Search, X } from "lucide-react";
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE_OPTIONS = [6, 9, 12];
+const DEFAULT_PAGE_SIZE = 6;
 
 const JobListing = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -39,8 +40,10 @@ const JobListing = () => {
   const [company_id, setCompany_id] = useState("");
 
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const { isLoaded } = useUser();
+  const countryList = useMemo(() => Country.getAllCountries(), []);
 
   const {
     data: companies,
@@ -60,7 +63,7 @@ const JobListing = () => {
     searchQuery,
 
     page,
-    limit: PAGE_SIZE,
+    limit: pageSize,
   });
 
   useEffect(() => {
@@ -73,7 +76,7 @@ const JobListing = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [location, company_id, searchQuery]);
+  }, [location, company_id, searchQuery, pageSize]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -91,14 +94,29 @@ const JobListing = () => {
   };
 
   const totalCount = jobs?.length ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const startIndex = (page - 1) * PAGE_SIZE;
-  const endIndex = Math.min(startIndex + PAGE_SIZE, totalCount);
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(1);
+    }
+  }, [page, totalPages]);
+
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const startIndex = (safePage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalCount);
+
+  const sortedJobs = useMemo(() => {
+    if (!jobs?.length) return [];
+    return [...jobs].sort(
+      (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
+    );
+  }, [jobs]);
 
   const displayedJobs = useMemo(() => {
-    if (!jobs?.length) return [];
-    return jobs.slice(startIndex, startIndex + PAGE_SIZE);
-  }, [jobs, startIndex]);
+    if (!sortedJobs?.length) return [];
+    return sortedJobs.slice(startIndex, startIndex + pageSize);
+  }, [sortedJobs, startIndex, pageSize]);
 
   const pageNumbers = useMemo(() => {
     if (totalPages <= 7)
@@ -106,11 +124,11 @@ const JobListing = () => {
     const base = new Set([
       1,
       totalPages,
-      page,
-      page - 1,
-      page + 1,
-      page - 2,
-      page + 2,
+      safePage,
+      safePage - 1,
+      safePage + 1,
+      safePage - 2,
+      safePage + 2,
     ]);
     const list = Array.from(base)
       .filter((n) => typeof n === "number" && n >= 1 && n <= totalPages)
@@ -124,7 +142,7 @@ const JobListing = () => {
     if (withDots[withDots.length - 1] !== totalPages)
       withDots.push("…", totalPages);
     return withDots;
-  }, [page, totalPages]);
+  }, [safePage, totalPages]);
 
   const showingFrom = totalCount === 0 ? 0 : startIndex + 1;
   const showingTo = endIndex;
@@ -174,7 +192,7 @@ const JobListing = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              {Country.getAllCountries().map(({ name }) => (
+              {countryList.map(({ name }) => (
                 <SelectItem key={name} value={name}>
                   {name}
                 </SelectItem>
@@ -229,9 +247,29 @@ const JobListing = () => {
               <BriefcaseBusiness size={17} className="text-primary" />
               {totalCount} {totalCount === 1 ? "role" : "roles"} available
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Filter size={16} />
-              Showing {showingFrom}-{showingTo}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1.5 text-xs font-semibold">
+                <span className="text-muted-foreground">Per page:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="rounded-md border border-border bg-card px-2 py-1 text-xs font-bold text-foreground focus:border-primary focus:outline-none"
+                  aria-label="Jobs per page"
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <Filter size={16} />
+                Showing {showingFrom}-{showingTo}
+              </div>
             </div>
           </div>
 
@@ -263,9 +301,9 @@ const JobListing = () => {
                     <PaginationPrevious
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
                       className={
-                        page === 1 ? "pointer-events-none opacity-50" : ""
+                        safePage === 1 ? "pointer-events-none opacity-50" : ""
                       }
-                      aria-disabled={page === 1}
+                      aria-disabled={safePage === 1}
                     />
                   </PaginationItem>
 
@@ -277,7 +315,7 @@ const JobListing = () => {
                     ) : (
                       <PaginationItem key={n}>
                         <PaginationLink
-                          isActive={n === page}
+                          isActive={n === safePage}
                           onClick={() => setPage(Number(n))}
                         >
                           {n}
@@ -292,7 +330,7 @@ const JobListing = () => {
                         setPage((p) => Math.min(totalPages, p + 1))
                       }
                       className={
-                        page === totalPages
+                        safePage === totalPages
                           ? "pointer-events-none opacity-50"
                           : ""
                       }
