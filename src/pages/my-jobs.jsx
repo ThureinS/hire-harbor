@@ -20,7 +20,7 @@ const MyJobs = () => {
         <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
           {isCandidate ? "Candidate pipeline" : "Recruiter dashboard"}
         </p>
-        <h1 className="page-title mt-2 text-4xl font-black sm:text-6xl">
+        <h1 className="page-title mt-2 text-2xl font-black tracking-tight sm:text-3xl md:text-4xl">
           {isCandidate ? "My Applications" : "My Jobs"}
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">

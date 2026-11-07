@@ -96,7 +96,7 @@ const JobPage = () => {
             <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">
               Job details
             </p>
-            <h1 className="page-title mt-2 max-w-4xl text-4xl font-black leading-tight sm:text-6xl">
+            <h1 className="page-title mt-2 max-w-4xl text-2xl font-black tracking-tight leading-tight sm:text-3xl md:text-4xl">
               {job?.title}
             </h1>
             <div className="mt-4 flex items-center gap-3 text-muted-foreground">
@@ -186,7 +186,7 @@ const JobPage = () => {
         <div className="rounded-md border border-border bg-card p-5 sm:p-6">
           <div className="mb-4 flex items-center gap-2">
             <CheckCircle2 size={20} className="text-primary" />
-            <h2 className="text-2xl font-black sm:text-3xl">About the job</h2>
+            <h2 className="text-xl font-bold sm:text-2xl">About the job</h2>
           </div>
           <p className="text-base leading-7 text-muted-foreground sm:text-lg">
             {job?.description}
@@ -194,7 +194,7 @@ const JobPage = () => {
         </div>
 
         <div className="rounded-md border border-border bg-card p-5">
-          <h2 className="text-xl font-black">Move on this role</h2>
+          <h2 className="text-lg font-bold">Move on this role</h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
             Review the requirements and apply while the role is open.
           </p>
@@ -220,7 +220,7 @@ const JobPage = () => {
       </section>
 
       <section className="rounded-md border border-border bg-card p-5 sm:p-6">
-        <h2 className="mb-4 text-2xl font-black sm:text-3xl">
+        <h2 className="mb-4 text-xl font-bold sm:text-2xl">
           What we are looking for
         </h2>
         <SafeMarkdown
@@ -240,7 +240,7 @@ const JobPage = () => {
               <p className="text-xs font-black uppercase tracking-[0.16em] text-primary">
                 Recruiter view
               </p>
-              <h2 className="mt-1 text-2xl font-black sm:text-3xl">
+              <h2 className="mt-1 text-xl font-bold sm:text-2xl">
                 Applications
               </h2>
             </div>

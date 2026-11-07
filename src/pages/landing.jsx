@@ -52,10 +52,10 @@ const LandingPage = () => {
             <ShipWheel size={14} />
             Harbor Bold
           </span>
-          <h1 className="page-title max-w-4xl text-5xl font-black leading-[0.95] sm:text-7xl lg:text-8xl">
+          <h1 className="page-title max-w-3xl text-3xl font-black tracking-tight leading-tight sm:text-4xl md:text-5xl lg:text-5xl">
             Find your next role with a sharper first pass.
           </h1>
-          <p className="max-w-2xl text-base font-medium leading-7 text-muted-foreground sm:text-xl">
+          <p className="max-w-2xl text-base font-medium leading-relaxed text-muted-foreground sm:text-lg">
             Hire Harbor puts the job search loop first: search the market,
             compare clear role data, then apply or save without extra noise.
           </p>
